@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>每日熱量估算 | ACE 教練</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --accent: #FF6B1A;
+    --accent2: #FF8C42;
+    --accent-dim: rgba(255,107,26,0.15);
+    --accent-glow: rgba(255,107,26,0.35);
+    --bg: #0d0d0f;
+    --surface: #16161a;
+    --surface2: #1e1e24;
+    --surface3: #252530;
+    --border: rgba(255,255,255,0.06);
+    --border-accent: rgba(255,107,26,0.4);
+    --text: #f0f0f0;
+    --text-muted: #666;
+    --text-dim: #999;
+    --blue: #4A9EFF;
+    --green: #3DD68C;
+    --yellow: #FFD166;
+    --red: #FF5C5C;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans TC', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: -200px; right: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(255,107,26,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+
+  /* HEADER */
+  .header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .brand-label {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--accent);
+    font-weight: 500;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    font-size: clamp(2.8rem, 12vw, 4.2rem);
+    font-weight: 900;
+    line-height: 1;
+    color: var(--accent);
+    letter-spacing: -1px;
+    margin-bottom: 6px;
+  }
+
+  .h1-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    font-weight: 300;
+  }
+
+  /* CARD */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 12px;
+  }
+
+  .card-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+
+  /* GENDER */
+  .gender-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .gender-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    color: var(--text-muted);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .gender-btn.active {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* SLIDER FIELD */
+  .slider-field {
+    margin-bottom: 20px;
+  }
+
+  .slider-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .slider-label {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-weight: 400;
+  }
+
+  .slider-val-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .slider-val {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 36px;
+    text-align: right;
+  }
+
+  .slider-unit {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 300;
+  }
+
+  .manual-input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    color: var(--accent);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    width: 72px;
+    text-align: center;
+    -webkit-appearance: none;
+    transition: border-color 0.2s;
+  }
+
+  .manual-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--surface3);
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 12px var(--accent-glow);
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+
+  input[type=range]::-webkit-slider-thumb:active {
+    transform: scale(1.2);
+  }
+
+  /* ACTIVITY */
+  .activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .act-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 13px 16px;
+    color: var(--text-dim);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.18s;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .act-btn span:first-child {
+    flex: 1;
+    line-height: 1.4;
+  }
+
+  .act-btn .mult {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .act-btn:hover {
+    border-color: var(--border-accent);
+    color: var(--text);
+  }
+
+  .act-btn.active {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--text);
+  }
+
+  .act-btn.active .mult {
+    color: var(--accent);
+  }
+
+  /* GOAL */
+  .goal-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+
+  .goal-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 8px;
+    color: var(--text-muted);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .goal-btn .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .goal-btn[data-goal="減脂"] .dot { background: var(--blue); }
+  .goal-btn[data-goal="維持"] .dot { background: var(--green); }
+  .goal-btn[data-goal="增肌"] .dot { background: var(--yellow); }
+
+  .goal-btn[data-goal="減脂"].active { background: rgba(74,158,255,0.15); border-color: var(--blue); color: var(--blue); }
+  .goal-btn[data-goal="維持"].active { background: rgba(61,214,140,0.15); border-color: var(--green); color: var(--green); }
+  .goal-btn[data-goal="增肌"].active { background: rgba(255,209,102,0.15); border-color: var(--yellow); color: var(--yellow); }
+
+  /* CALC BUTTON */
+  .calc-btn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: 14px;
+    padding: 20px;
+    color: #fff;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 18px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+    box-shadow: 0 8px 32px var(--accent-glow);
+    margin-top: 4px;
+  }
+
+  .calc-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px var(--accent-glow);
+  }
+
+  .calc-btn:active { transform: translateY(0); }
+
+  /* RESULTS */
+  .results { display: none; }
+  .results.show {
+    display: block;
+    animation: fadeUp 0.4s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  /* TDEE Big */
+  .tdee-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 24px;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+
+  .tdee-num {
+    font-size: clamp(3.5rem, 16vw, 5.5rem);
+    font-weight: 900;
+    color: var(--accent);
+    line-height: 1;
+    letter-spacing: -2px;
+  }
+
+  .tdee-unit-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    font-weight: 300;
+  }
+
+  /* Goal calories */
+  .goal-cal-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+
+  .goal-cal-num {
+    font-size: clamp(2.8rem, 13vw, 4.2rem);
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -1px;
+  }
+
+  .goal-cal-num.減脂 { color: var(--blue); }
+  .goal-cal-num.維持 { color: var(--green); }
+  .goal-cal-num.增肌 { color: var(--yellow); }
+
+  .goal-cal-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .goal-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-top: 10px;
+  }
+
+  .goal-badge.減脂 { background: rgba(74,158,255,0.15); color: var(--blue); }
+  .goal-badge.維持 { background: rgba(61,214,140,0.15); color: var(--green); }
+  .goal-badge.增肌 { background: rgba(255,209,102,0.15); color: var(--yellow); }
+
+  /* MACROS */
+  .macros-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 10px;
+  }
+
+  .macros-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .macro-item {
+    background: var(--surface2);
+    border-radius: 12px;
+    padding: 16px 10px;
+    text-align: center;
+  }
+
+  .macro-icon {
+    font-size: 20px;
+    margin-bottom: 6px;
+  }
+
+  .macro-g {
+    font-size: 22px;
+    font-weight: 900;
+    line-height: 1;
+  }
+
+  .macro-g.protein { color: var(--blue); }
+  .macro-g.carb { color: var(--yellow); }
+  .macro-g.fat { color: var(--red); }
+
+  .macro-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    font-weight: 500;
+    letter-spacing: 1px;
+  }
+
+  /* PROGRESS BAR */
+  .macro-bar {
+    height: 6px;
+    background: var(--surface3);
+    border-radius: 3px;
+    overflow: hidden;
+    display: flex;
+    gap: 2px;
+  }
+
+  .macro-bar-seg {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* TIPS */
+  .tips-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 10px;
+  }
+
+  .tip-item {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 14px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-dim);
+  }
+
+  .tip-item:last-child { margin-bottom: 0; }
+
+  .tip-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .tip-text strong {
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  /* LINE CTA */
+  .line-btn {
+    display: block;
+    background: #06C755;
+    border: none;
+    border-radius: 14px;
+    padding: 18px 24px;
+    color: #fff;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: center;
+    text-decoration: none;
+    transition: all 0.2s;
+    margin-bottom: 8px;
+    box-shadow: 0 8px 24px rgba(6,199,85,0.25);
+  }
+
+  .line-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(6,199,85,0.35);
+  }
+
+  .line-note {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: center;
+    font-weight: 300;
+  }
+
+  /* Divider */
+  .section-gap { margin-bottom: 12px; }
+
+  .manual-input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 5px 10px;
+    color: var(--accent);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    width: 76px;
+    text-align: center;
+    transition: border-color 0.2s;
+  }
+  .manual-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+  .manual-input::-webkit-outer-spin-button,
+  .manual-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .manual-input[type=number] { -moz-appearance: textfield; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="brand-label">ACE 教練 ｜ 實用工具</div>
+    <h1>每日熱量估算</h1>
+    <div class="h1-sub">TDEE ｜ Total Daily Energy Expenditure</div>
+  </div>
+
+  <!-- 基本資料 -->
+  <div class="card">
+    <div class="card-title">基本資料</div>
+
+    <div class="gender-row">
+      <button class="gender-btn active" id="btn-male" onclick="setGender('male')">♂ 男性</button>
+      <button class="gender-btn" id="btn-female" onclick="setGender('female')">♀ 女性</button>
+    </div>
+
+    <div class="slider-field">
+      <div class="slider-top">
+        <span class="slider-label">年齡</span>
+        <div class="slider-val-row">
+          <span class="slider-val" id="age-val">25</span>
+          <span class="slider-unit">歲</span>
+        </div>
+      </div>
+      <input type="range" id="age" min="15" max="70" value="25" oninput="syncSlider('age')">
+    </div>
+
+    <div class="slider-field">
+      <div class="slider-top">
+        <span class="slider-label">身高</span>
+        <div class="slider-val-row">
+          <input type="number" class="manual-input" id="height-input" value="170" min="145" max="210" step="0.1" oninput="syncInput('height')">
+          <span class="slider-unit">cm</span>
+        </div>
+      </div>
+      <input type="range" id="height" min="145" max="210" value="170" step="0.5" oninput="syncSlider('height')">
+    </div>
+
+    <div class="slider-field" style="margin-bottom:0">
+      <div class="slider-top">
+        <span class="slider-label">體重</span>
+        <div class="slider-val-row">
+          <input type="number" class="manual-input" id="weight-input" value="70" min="40" max="150" step="0.1" oninput="syncInput('weight')">
+          <span class="slider-unit">kg</span>
+        </div>
+      </div>
+      <input type="range" id="weight" min="40" max="150" value="70" step="0.5" oninput="syncSlider('weight')">
+    </div>
+  </div>
+
+  <!-- 活動量 -->
+  <div class="card">
+    <div class="card-title">活動量</div>
+    <div class="activity-list">
+      <button class="act-btn" data-factor="1.2" onclick="setActivity(this)">
+        <span>🪑 久坐少動（辦公室、幾乎不運動）</span>
+        <span class="mult">×1.2</span>
+      </button>
+      <button class="act-btn" data-factor="1.375" onclick="setActivity(this)">
+        <span>🚶 輕度活動（每週運動 1–3 次）</span>
+        <span class="mult">×1.375</span>
+      </button>
+      <button class="act-btn active" data-factor="1.55" onclick="setActivity(this)">
+        <span>⚡ 中度活動（每週運動 3–5 次）</span>
+        <span class="mult">×1.55</span>
+      </button>
+      <button class="act-btn" data-factor="1.725" onclick="setActivity(this)">
+        <span>💪 高度活動（每週運動 6–7 次）</span>
+        <span class="mult">×1.725</span>
+      </button>
+      <button class="act-btn" data-factor="1.9" onclick="setActivity(this)">
+        <span>🔥 非常高度（每天訓練或體力勞動）</span>
+        <span class="mult">×1.9</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 你的目標 -->
+  <div class="card">
+    <div class="card-title">你的目標</div>
+    <div class="goal-row">
+      <button class="goal-btn active" data-goal="減脂" onclick="setGoal(this)">
+        <span class="dot"></span>減脂
+      </button>
+      <button class="goal-btn" data-goal="維持" onclick="setGoal(this)">
+        <span class="dot"></span>維持
+      </button>
+      <button class="goal-btn" data-goal="增肌" onclick="setGoal(this)">
+        <span class="dot"></span>增肌
+      </button>
+    </div>
+  </div>
+
+  <button class="calc-btn" onclick="calculate()">計算我的熱量</button>
+
+  <!-- RESULTS -->
+  <div class="results" id="results">
+    <div class="section-gap"></div>
+    <div class="result-title">計算結果</div>
+
+    <!-- TDEE -->
+    <div class="tdee-block">
+      <div style="font-size:11px;color:var(--text-muted);letter-spacing:2px;margin-bottom:8px;">維持體重所需熱量（TDEE）</div>
+      <div class="tdee-num" id="tdee-num">—</div>
+      <div class="tdee-unit-label">大卡 / 天</div>
+    </div>
+
+    <!-- Goal Cal -->
+    <div class="goal-cal-block">
+      <div class="goal-cal-num" id="goal-num">—</div>
+      <div class="goal-cal-sub">大卡 / 天</div>
+      <div class="goal-badge" id="goal-badge"></div>
+    </div>
+
+    <!-- Macros -->
+    <div class="macros-card">
+      <div class="result-title">三大營養素建議</div>
+      <div class="macros-grid">
+        <div class="macro-item">
+          <div class="macro-icon">🥩</div>
+          <div class="macro-g protein" id="protein-g">—</div>
+          <div class="macro-label">蛋白質 g</div>
+        </div>
+        <div class="macro-item">
+          <div class="macro-icon">🍚</div>
+          <div class="macro-g carb" id="carb-g">—</div>
+          <div class="macro-label">碳水化合物 g</div>
+        </div>
+        <div class="macro-item">
+          <div class="macro-icon">🥑</div>
+          <div class="macro-g fat" id="fat-g">—</div>
+          <div class="macro-label">脂肪 g</div>
+        </div>
+      </div>
+      <div class="macro-bar">
+        <div class="macro-bar-seg" id="bar-p" style="background:var(--blue);"></div>
+        <div class="macro-bar-seg" id="bar-c" style="background:var(--yellow);"></div>
+        <div class="macro-bar-seg" id="bar-f" style="background:var(--red);"></div>
+      </div>
+    </div>
+
+    <!-- Tips -->
+    <div class="tips-card">
+      <div class="result-title">執行建議</div>
+      <div id="tips-content"></div>
+    </div>
+
+    <!-- LINE CTA -->
+    <a href="https://lin.ee/XOFyyQv" target="_blank" class="line-btn">
+      想了解更多？找 ACE 教練諮詢
+    </a>
+    <p class="line-note">Line@ 回覆「想聊聊減脂」</p>
+  </div>
+
+</div>
+
+<script>
+  let gender = 'male';
+  let activityFactor = 1.55;
+  let currentGoal = '減脂';
+
+  function syncSlider(id) {
+    const val = document.getElementById(id).value;
+    const span = document.getElementById(id + '-val');
+    const inp = document.getElementById(id + '-input');
+    if (span) span.textContent = val;
+    if (inp) inp.value = parseFloat(val).toFixed(1);
+  }
+
+  function syncInput(id) {
+    const inp = document.getElementById(id + '-input');
+    const slider = document.getElementById(id);
+    const val = parseFloat(inp.value);
+    if (!isNaN(val)) slider.value = val;
+  }
+
+  function setGender(g) {
+    gender = g;
+    document.getElementById('btn-male').classList.toggle('active', g === 'male');
+    document.getElementById('btn-female').classList.toggle('active', g === 'female');
+  }
+
+  function setActivity(el) {
+    document.querySelectorAll('.act-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    activityFactor = parseFloat(el.dataset.factor);
+  }
+
+  function setGoal(el) {
+    document.querySelectorAll('.goal-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    currentGoal = el.dataset.goal;
+  }
+
+  function calculate() {
+    const age = parseInt(document.getElementById('age').value);
+    const height = parseFloat(document.getElementById('height-input') ? document.getElementById('height-input').value : document.getElementById('height').value);
+    const weight = parseFloat(document.getElementById('weight-input') ? document.getElementById('weight-input').value : document.getElementById('weight').value);
+
+    // Mifflin-St Jeor
+    let bmr = gender === 'male'
+      ? 10 * weight + 6.25 * height - 5 * age + 5
+      : 10 * weight + 6.25 * height - 5 * age - 161;
+
+    const tdee = Math.round(bmr * activityFactor);
+
+    let goalCal, delta, pct, tips;
+
+    if (currentGoal === '減脂') {
+      goalCal = Math.max(1200, tdee - 500);
+      delta = '減脂建議日攝取 ' + goalCal + ' 大卡，比維持熱量少約 ' + (tdee - goalCal) + ' 大卡，每週可減少約 0.5kg 是健康速度。';
+      tips = [
+        { icon: '🥩', text: '<strong>蛋白質優先</strong>：每公斤體重攝取 1.6–2.2g 蛋白質，減脂期間保肌肉不失失。' },
+        { icon: '⚠️', text: '<strong>不要減太快</strong>：每週減超過 1kg 代表可能在掉肌肉，不是純脂肪。' },
+        { icon: '😴', text: '<strong>睡眠很重要</strong>：睡眠不足會拉高皮質醇，讓身體更容易堆積脂肪。' },
+        { icon: '📊', text: '<strong>搭配重訓</strong>：有氧消耗熱量，重訓才能維持體態、避免體重降了卻鬆垮。' },
+      ];
+    } else if (currentGoal === '維持') {
+      goalCal = tdee;
+      delta = '維持體重目標，攝取熱量等於 TDEE。';
+      tips = [
+        { icon: '⚖️', text: '<strong>精準維持</strong>：每天誤差 ±100 大卡以內，1–2 週體重波動正常，不需恐慌。' },
+        { icon: '🏋️', text: '<strong>繼續訓練</strong>：維持期是體態重組的好時機，脂肪換肌肉。' },
+        { icon: '📅', text: '<strong>長期追蹤</strong>：每週量一次體重，記錄趨勢比單日數字更有意義。' },
+      ];
+    } else {
+      goalCal = tdee + 300;
+      delta = '增肌建議日攝取 ' + goalCal + ' 大卡，比維持多 300 大卡，緩慢增重減少脂肪囤積。';
+      tips = [
+        { icon: '🥩', text: '<strong>蛋白質不能少</strong>：每公斤體重至少 1.6g，讓肌肉有足夠原料合成。' },
+        { icon: '⚠️', text: '<strong>不要增太快</strong>：每週超過 0.5kg 增重，多出的大多是脂肪，不是肌肉。' },
+        { icon: '💪', text: '<strong>訓練是關鍵</strong>：吃夠沒有訓練刺激，多餘的熱量只會變脂肪。' },
+        { icon: '😴', text: '<strong>睡眠促進合成</strong>：肌肉生長主要在睡眠中完成，別忽視休息品質。' },
+      ];
+    }
+
+    // Macros
+    const protein = Math.round(weight * 1.8);
+    const proteinCal = protein * 4;
+    const fatCal = Math.round(goalCal * 0.25);
+    const fat = Math.round(fatCal / 9);
+    const carb = Math.round((goalCal - proteinCal - fatCal) / 4);
+    const carbActual = Math.max(50, carb);
+
+    const totalCal = proteinCal + fatCal + carbActual * 4;
+    const pP = Math.round((proteinCal / totalCal) * 100);
+    const pF = Math.round((fatCal / totalCal) * 100);
+    const pC = 100 - pP - pF;
+
+    // Update DOM
+    document.getElementById('tdee-num').textContent = tdee.toLocaleString();
+    document.getElementById('goal-num').textContent = goalCal.toLocaleString();
+    document.getElementById('goal-num').className = 'goal-cal-num ' + currentGoal;
+
+    const badge = document.getElementById('goal-badge');
+    const goalDeltaMap = { '減脂': '減脂模式 (-500 kcal)', '維持': '熱量平衡', '增肌': '增肌模式 (+300 kcal)' };
+    badge.textContent = goalDeltaMap[currentGoal];
+    badge.className = 'goal-badge ' + currentGoal;
+
+    document.getElementById('protein-g').textContent = protein;
+    document.getElementById('carb-g').textContent = carbActual;
+    document.getElementById('fat-g').textContent = fat;
+
+    document.getElementById('bar-p').style.width = pP + '%';
+    document.getElementById('bar-c').style.width = pC + '%';
+    document.getElementById('bar-f').style.width = pF + '%';
+
+    const tipsHTML = tips.map(t =>
+      `<div class="tip-item"><div class="tip-icon">${t.icon}</div><div class="tip-text">${t.text}</div></div>`
+    ).join('');
+    document.getElementById('tips-content').innerHTML = tipsHTML;
+
+    const results = document.getElementById('results');
+    results.classList.remove('show');
+    void results.offsetWidth;
+    results.classList.add('show');
+    setTimeout(() => results.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ACE 8週線上減重陪跑計劃</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#080c0d; --s1:#0f1416; --s2:#141b1d;
+  --border:#1e2d30; --border2:#263538;
+  --green:#00e5a0; --red:#ff4d6d; --yellow:#ffd166; --blue:#38bdf8; --purple:#c084fc;
+  --text:#e2eced; --muted:#4a6870; --muted2:#7a9aa0;
+  --mono:'IBM Plex Mono',monospace; --sans:'Noto Sans TC',sans-serif; --serif:'DM Serif Display',serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;font-size:15px;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 70% 50% at 5% 15%,rgba(0,229,160,.05) 0%,transparent 55%),radial-gradient(ellipse 50% 70% at 95% 85%,rgba(56,189,248,.04) 0%,transparent 55%);pointer-events:none;z-index:0;}
+
+/* PAGE LAYOUT — no overflow:hidden anywhere on ancestors */
+.page{max-width:980px;margin:0 auto;padding:20px 12px 80px;position:relative;z-index:1;}
+
+/* HEADER */
+.hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+.hdr h1{font-family:var(--serif);font-size:2.4rem;letter-spacing:-.02em;line-height:1;color:var(--text);}
+.hdr h1 em{color:var(--green);font-style:normal;}
+.hdr h2{font-family:var(--sans);font-size:.95rem;font-weight:400;color:var(--muted2);margin-top:4px;letter-spacing:.02em;}
+.line-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  margin-top:12px;
+  background:#06C755;color:#fff;
+  padding:7px 14px;
+  font-size:.75rem;font-weight:600;
+  text-decoration:none;
+  transition:opacity .2s;
+  font-family:var(--sans);
+}
+.line-btn:hover{opacity:.85;}
+.week-pill{font-family:var(--mono);font-size:.65rem;color:var(--green);border:1px solid var(--green);padding:5px 12px;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;margin-top:4px;}
+
+/* GOAL BAR */
+.goal-bar{background:var(--s1);border:1px solid var(--border);padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.goal-bar label{font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;}
+.goal-bar input{background:var(--bg);border:1px solid var(--border2);color:var(--yellow);font-family:var(--mono);font-size:.9rem;font-weight:600;padding:5px 10px;width:90px;outline:none;}
+.goal-bar input:focus{border-color:var(--yellow);}
+.goal-info{font-family:var(--mono);font-size:.65rem;color:var(--muted2);}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px;}
+@media(min-width:500px){.stats{grid-template-columns:repeat(4,1fr);}}
+.stat{background:var(--s1);border:1px solid var(--border);padding:10px 12px;position:relative;overflow:hidden;}
+.stat::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--green);transform:scaleX(0);transform-origin:left;transition:transform .4s;}
+.stat.lit::after{transform:scaleX(1);}
+.stat.r::after{background:var(--red);} .stat.y::after{background:var(--yellow);} .stat.b::after{background:var(--blue);}
+.slbl{font-family:var(--mono);font-size:.55rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px;}
+.sval{font-family:var(--mono);font-size:1.1rem;font-weight:600;}
+.sval.g{color:var(--green);} .sval.r{color:var(--red);} .sval.y{color:var(--yellow);} .sval.b{color:var(--blue);}
+
+/* SECTION BOXES */
+.box{background:var(--s1);border:1px solid var(--border);margin-bottom:16px;}
+.box-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0;margin-bottom:12px;}
+.box-hdr span:first-child{font-family:var(--mono);font-size:.6rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;}
+.box-hdr .hint{font-family:var(--mono);font-size:.58rem;color:var(--muted);margin-left:8px;}
+.box-body{padding:0 16px 16px;}
+
+/* FORM */
+.fg{margin-bottom:14px;}
+.fg label{display:block;font-family:var(--mono);font-size:.58rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;}
+input[type=date],input[type=number],input[type=text],select,textarea{width:100%;background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:10px 12px;font-size:.88rem;font-family:var(--sans);outline:none;transition:border-color .2s;-webkit-appearance:none;border-radius:0;}
+input:focus,select:focus,textarea:focus{border-color:var(--green);}
+select option{background:var(--s2);}
+textarea{resize:vertical;min-height:60px;font-size:.82rem;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.change-box{font-family:var(--mono);font-size:1rem;font-weight:600;padding:10px 12px;background:var(--bg);border:1px solid var(--border2);min-height:42px;color:var(--muted);}
+.if-val{font-family:var(--mono);font-size:.88rem;font-weight:600;color:var(--blue);padding:10px 12px;background:var(--bg);border:1px solid var(--border2);}
+
+/* CHECKBOX EXERCISE */
+.chk-list{display:flex;flex-direction:column;gap:6px;}
+.chk-item{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;padding:8px 12px;border:1px solid var(--border2);background:var(--bg);transition:all .15s;}
+.chk-item:hover{border-color:var(--muted2);}
+.chk-item.sel{border-color:var(--purple);background:rgba(192,132,252,.07);}
+.chk-box{width:16px;height:16px;min-width:16px;border:1.5px solid var(--muted);display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.chk-item.sel .chk-box{border-color:var(--purple);background:var(--purple);}
+.chk-tick{display:none;font-size:10px;color:#000;font-weight:700;}
+.chk-item.sel .chk-tick{display:block;}
+.chk-lbl{font-size:.82rem;color:var(--muted2);transition:color .15s;}
+.chk-item.sel .chk-lbl{color:var(--text);}
+
+/* EMOJI SINGLE SELECT */
+.emo-row{display:flex;flex-wrap:wrap;gap:6px;}
+.emo-opt{font-size:.8rem;padding:6px 10px;border:1px solid var(--border2);cursor:pointer;transition:all .15s;user-select:none;background:var(--bg);}
+.emo-opt:hover{border-color:var(--muted2);}
+.emo-opt.sel{border-color:var(--green);background:rgba(0,229,160,.08);}
+
+/* BUTTONS */
+.submit-btn{width:100%;background:var(--green);color:#000;border:none;padding:13px;font-size:.8rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;font-family:var(--mono);margin-top:6px;transition:opacity .2s;}
+.submit-btn:hover{opacity:.85;}
+.clear-btn{width:100%;background:transparent;color:var(--muted);border:1px solid var(--border2);padding:9px;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;font-family:var(--mono);margin-top:6px;transition:all .2s;}
+.clear-btn:hover{color:var(--red);border-color:var(--red);}
+
+/* STEP STATS */
+.step-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.sg{background:var(--s2);border:1px solid var(--border);padding:10px 12px;}
+.sg .slbl{font-size:.55rem;margin-bottom:3px;}
+.sg .sval{font-size:.9rem;}
+
+/* TAB CONTROLS */
+.log-controls{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:0 16px 12px;}
+.tab-btn{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;padding:6px 12px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;}
+.tab-btn.active{background:var(--green);color:#000;border-color:var(--green);}
+.exp-btn{font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;padding:6px 12px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;margin-left:auto;}
+.exp-btn:hover{color:var(--green);border-color:var(--green);}
+
+/* ══════════════════════════════════════
+   CHART — scrollable container
+   The key: chart-outer has NO overflow restriction,
+   chart-scroll is the ONLY thing with overflow-x:auto
+   ══════════════════════════════════════ */
+.chart-outer{position:relative;}
+.chart-scroll{
+  overflow-x:auto;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  /* full bleed past box padding */
+  margin:0 -16px;
+  padding:0 16px 8px;
+}
+.chart-scroll::-webkit-scrollbar{height:3px;}
+.chart-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+#wChart{display:block;}
+
+/* chart tooltip */
+.chart-tip{position:absolute;background:var(--s1);border:1px solid var(--green);padding:8px 12px;font-family:var(--mono);font-size:.72rem;pointer-events:none;z-index:20;min-width:110px;box-shadow:0 4px 20px rgba(0,0,0,.6);}
+.ct-date{color:var(--muted2);font-size:.62rem;margin-bottom:3px;}
+.ct-w{color:var(--text);font-size:1rem;font-weight:600;}
+.ct-c{font-size:.75rem;margin-top:2px;}
+
+/* ══════════════════════════════════════
+   FROZEN TABLE
+   log-wrap: relative, no overflow
+   log-left: absolute overlay, fixed width
+   log-right: overflow-x:auto, margin-left = left width
+   ══════════════════════════════════════ */
+.log-wrap{position:relative;}
+.log-left{
+  position:absolute;
+  left:0;top:0;bottom:0;
+  width:105px;
+  background:var(--s1);
+  z-index:5;
+  box-shadow:4px 0 10px rgba(0,0,0,.5);
+}
+.log-right{
+  overflow-x:auto;
+  overflow-y:visible;
+  -webkit-overflow-scrolling:touch;
+  margin-left:105px;
+}
+.log-right::-webkit-scrollbar{height:4px;}
+.log-right::-webkit-scrollbar-track{background:var(--bg);}
+.log-right::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+/* shared table styles */
+.tbl{border-collapse:collapse;width:100%;}
+.tbl-r{border-collapse:collapse;white-space:nowrap;}
+.tbl th{font-family:var(--mono);font-size:.52rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:8px 10px;text-align:left;font-weight:400;border-bottom:1px solid var(--border);background:var(--s1);white-space:nowrap;}
+.tbl td,.tbl-r td{padding:0;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle;}
+.tbl td{padding:0;}
+.left-cell{padding:10px 10px;white-space:nowrap;}
+.right-cell{padding:9px 10px;white-space:nowrap;}
+tbody tr:hover .left-cell,tbody tr:hover .right-cell{background:var(--s2);}
+
+.f-date{font-family:var(--mono);font-size:.7rem;color:var(--muted2);}
+.f-w{font-family:var(--mono);font-size:.88rem;font-weight:600;}
+.f-chg{font-family:var(--mono);font-size:.75rem;font-weight:600;}
+.gv{color:var(--green);} .rv{color:var(--red);} .yv{color:var(--yellow);}
+.etag{font-size:.58rem;padding:2px 5px;border:1px solid var(--purple);color:var(--purple);font-family:var(--mono);display:inline-block;margin:1px;}
+.del-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.62rem;padding:2px 5px;transition:color .2s;font-family:var(--mono);}
+.del-btn:hover{color:var(--red);}
+
+/* EMPTY / TOAST */
+.empty{text-align:center;padding:40px 20px;color:var(--muted);font-family:var(--mono);font-size:.7rem;letter-spacing:.08em;}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--green);color:#000;padding:11px 22px;font-family:var(--mono);font-size:.75rem;font-weight:600;letter-spacing:.08em;transform:translateY(60px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);z-index:9999;}
+.toast.show{transform:translateY(0);opacity:1;}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="hdr">
+    <div>
+      <h1><em>ACE</em></h1>
+      <h2>8週線上減重陪跑計畫</h2>
+      <a class="line-btn" href="https://lin.ee/XOFyyQv" target="_blank">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+        加入 LINE@
+      </a>
+    </div>
+    <div class="week-pill" id="weekPill">第 — 週</div>
+  </div>
+
+  <!-- GOAL BAR -->
+  <div class="goal-bar">
+    <label>每日步數目標</label>
+    <input type="number" id="stepGoal" value="5000" min="1000" max="30000" step="500">
+    <span style="font-family:var(--mono);font-size:.75rem;color:var(--muted2)">步</span>
+    <span class="goal-info">設定後自動計算達標率</span>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat lit"><div class="slbl">起始體重</div><div class="sval" id="s-start">—</div></div>
+    <div class="stat">    <div class="slbl">目前體重</div><div class="sval" id="s-curr">—</div></div>
+    <div class="stat" id="sc-total"><div class="slbl">總變化</div><div class="sval" id="s-total">—</div></div>
+    <div class="stat y"> <div class="slbl">記錄天數</div><div class="sval y" id="s-days">0</div></div>
+    <div class="stat b"> <div class="slbl">步數達標率</div><div class="sval b" id="s-rate">—</div></div>
+  </div>
+
+  <!-- FORM -->
+  <div class="box">
+    <div class="box-hdr"><span>新增今日記錄</span></div>
+    <div class="box-body">
+      <div class="fg"><label>學員姓名</label><input type="text" id="f-client" placeholder="例：小明" style="font-family:var(--sans);"></div>
+      <div class="fg"><label>日期</label><input type="date" id="f-date"></div>
+      <div class="row2">
+        <div class="fg"><label>體重 (kg)</label><input type="number" id="f-weight" step="0.05" min="30" max="250" placeholder="82.5"></div>
+        <div class="fg"><label>體重變化</label><div class="change-box" id="f-change">—</div></div>
+      </div>
+      <div class="fg">
+        <label>量測時間</label>
+        <div class="emo-row" id="f-time-row">
+          <div class="emo-opt sel" data-v="起床後（上廁所後）">🌅 起床後</div>
+          <div class="emo-opt" data-v="下午">☀️ 下午</div>
+          <div class="emo-opt" data-v="晚上">🌙 晚上</div>
+          <div class="emo-opt" data-v="忘了">🤷 忘了</div>
+        </div>
+      </div>
+      <div class="fg">
+        <label>運動模式（可複選）</label>
+        <div class="chk-list" id="f-ex-tags">
+          <div class="chk-item" data-v="沒有運動"><div class="chk-box"><span class="chk-tick">✓</span></div><span class="chk-lbl">😴 沒有運動</span></div>
+          <div class="chk-item" data-v="輕度-散步／日常"><div class="chk-box"><span class="chk-tick">✓</span></div><span class="chk-lbl">🚶 輕度（散步／日常生活）</span></div>
+          <div class="chk-item" data-v="有氧運動"><div class="chk-box"><span class="chk-tick">✓</span></div><span class="chk-lbl">🏃 有氧運動（快走、慢跑、飛輪）</span></div>
+          <div class="chk-item" data-v="重量訓練"><div class="chk-box"><span class="chk-tick">✓</span></div><span class="chk-lbl">💪 重量訓練（器械／自由重量）</span></div>
+          <div class="chk-item" data-v="羽球／籃球／排球"><div class="chk-box"><span class="chk-tick">✓</span></div><span class="chk-lbl">🏸 羽球／🏀 籃球／🏐 排球</span></div>
+          <div class="chk-item" data-v="其他"><div class="chk-box"><span class="chk-tick">✓</span></div><span class="chk-lbl">⚡ 其他</span></div>
+        </div>
+      </div>
+      <div class="fg">
+        <label>步數區間</label>
+        <div class="emo-row" id="f-steps-row">
+          <div class="emo-opt" data-v="5000以下">👣 &lt;5k</div>
+          <div class="emo-opt" data-v="5000-7999">🚶 5-8k</div>
+          <div class="emo-opt" data-v="8000-9999">🏃 8-10k</div>
+          <div class="emo-opt sel" data-v="10000以上">🔥 10k+</div>
+        </div>
+      </div>
+      <div class="fg"><label>當日實際步數</label><input type="number" id="f-stepcount" min="0" max="99999" placeholder="例：8500"></div>
+      <div class="fg">
+        <label>飲食狀況</label>
+        <div class="emo-row" id="f-diet-row">
+          <div class="emo-opt sel" data-v="有控制">🥗 有控制</div>
+          <div class="emo-opt" data-v="普通">🍱 普通</div>
+          <div class="emo-opt" data-v="有點爆">🍰 有點爆</div>
+          <div class="emo-opt" data-v="爆掉了">💥 爆掉了</div>
+        </div>
+      </div>
+      <div class="fg">
+        <label>每日飲水量</label>
+        <div class="emo-row" id="f-water-row">
+          <div class="emo-opt" data-v="很少">💧 很少</div>
+          <div class="emo-opt" data-v="普通（有喝但不多）">💧💧 普通</div>
+          <div class="emo-opt sel" data-v="夠（有刻意補水）">💧💧💧 夠</div>
+          <div class="emo-opt" data-v="很夠（整天都有喝）">💧💧💧💧 很夠</div>
+        </div>
+      </div>
+      <div class="fg">
+        <label>今日狀態</label>
+        <div class="emo-row" id="f-mood-row">
+          <div class="emo-opt sel" data-v="今天狀況不錯">😄 不錯</div>
+          <div class="emo-opt" data-v="普普通通">😐 普通</div>
+          <div class="emo-opt" data-v="有點累">😴 有點累</div>
+          <div class="emo-opt" data-v="很累／快撐不住">😵 很累</div>
+        </div>
+      </div>
+      <div class="fg"><label>斷食 — 前一天最後一餐（如 2300）</label><input type="text" id="f-if-end" maxlength="4" placeholder="2300" style="font-family:var(--mono);font-size:1rem;letter-spacing:.1em;"></div>
+      <div class="fg"><label>斷食 — 今天第一餐（如 1130）</label><input type="text" id="f-if-start" maxlength="4" placeholder="1130" style="font-family:var(--mono);font-size:1rem;letter-spacing:.1em;"></div>
+      <div class="fg"><label>斷食時數（自動計算）</label><div class="if-val" id="f-if-result">— 小時</div></div>
+      <div class="fg"><label>備註 / 教練觀察</label><textarea id="f-note" placeholder="今天狀況、飲食細節、教練備注..."></textarea></div>
+      <button class="submit-btn" onclick="addEntry()">＋ 儲存今日記錄</button>
+      <button class="clear-btn" onclick="clearAll()">清空所有資料</button>
+    </div>
+  </div>
+
+  <!-- CHART BOX -->
+  <div class="box">
+    <div class="box-hdr">
+      <span>體重趨勢</span>
+      <span class="hint">← 橫滑查看 · 點數據點看詳情</span>
+    </div>
+    <div class="box-body" style="padding-bottom:4px;">
+      <!-- chart-outer: no overflow restriction -->
+      <div class="chart-outer">
+        <!-- chart-scroll: the ONLY overflow:auto element -->
+        <div class="chart-scroll" id="chartScroll">
+          <div id="chartInner" style="position:relative;display:inline-block;">
+            <canvas id="wChart"></canvas>
+            <div id="chartTip" class="chart-tip" style="display:none;position:absolute;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP STATS -->
+  <div class="box">
+    <div class="box-hdr"><span>步數統計</span></div>
+    <div class="box-body">
+      <div class="step-grid">
+        <div class="sg"><div class="slbl">達標天數</div><div class="sval g" id="ss-hit">0</div></div>
+        <div class="sg"><div class="slbl">未達標天數</div><div class="sval r" id="ss-miss">0</div></div>
+        <div class="sg"><div class="slbl">達標率</div><div class="sval b" id="ss-rate">—</div></div>
+        <div class="sg"><div class="slbl">平均每日步數</div><div class="sval" id="ss-avg">—</div></div>
+        <div class="sg"><div class="slbl">單日最高</div><div class="sval g" id="ss-max">—</div></div>
+        <div class="sg"><div class="slbl">單日最低</div><div class="sval r" id="ss-min">—</div></div>
+        <div class="sg"><div class="slbl">總步數（月）</div><div class="sval y" id="ss-total">—</div></div>
+        <div class="sg"><div class="slbl">總挑戰天數</div><div class="sval" id="ss-days">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG TABLE -->
+  <div class="box">
+    <div class="box-hdr"><span>每日記錄總覽</span><span class="hint">左固定 · 右橫滑</span></div>
+    <div class="log-controls">
+      <button class="tab-btn active" onclick="setTab('all',this)">全部</button>
+      <button class="tab-btn" onclick="setTab('w12',this)">W1–2</button>
+      <button class="tab-btn" onclick="setTab('w34',this)">W3–4</button>
+      <button class="tab-btn" onclick="setTab('w56',this)">W5–6</button>
+      <button class="tab-btn" onclick="setTab('w78',this)">W7–8</button>
+      <button class="exp-btn" onclick="exportCSV()">↓ CSV</button>
+    </div>
+    <!-- log-wrap: no overflow -->
+    <div class="log-wrap" id="logWrap">
+      <!-- fixed left column -->
+      <div class="log-left">
+        <table class="tbl" id="tblLeft">
+          <thead><tr><th style="width:105px;">日期 / 體重</th></tr></thead>
+          <tbody id="bodyLeft"></tbody>
+        </table>
+      </div>
+      <!-- scrollable right -->
+      <div class="log-right" id="logRight">
+        <table class="tbl-r" id="tblRight">
+          <thead>
+            <tr>
+              <th>運動</th><th>步數</th><th>達標</th>
+              <th>飲食</th><th>飲水</th><th>狀態</th>
+              <th>斷食</th><th>備註</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="bodyRight"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- .page -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── GOOGLE SHEETS ──
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxiOiVq8YuwToSBpBQ5FvJaakBIc8QLnxMQWszZuQSgwSIK21KrS-QxUUmqx90vDTxY/exec';
+
+async function sendToSheets(entry) {
+  try {
+    const clientName = document.getElementById('f-client').value.trim() || '未命名學員';
+    const goal = stepGoal();
+    const payload = {
+      ...entry,
+      clientName,
+      stepsOk: entry.steps ? (entry.steps >= goal ? '達標' : '未達標') : '',
+      ifStr: calcIFStr(entry.ifStart, entry.ifEnd)
+    };
+    const url = SHEET_URL + '?data=' + encodeURIComponent(JSON.stringify(payload));
+    const res = await fetch(url, { method: 'GET' });
+    const json = await res.json();
+    if(json.status === 'ok') {
+      showToast('✓ 已儲存並同步至 Sheets');
+    } else {
+      showToast('⚠️ 儲存成功，Sheets 同步失敗');
+    }
+  } catch(err) {
+    console.log('Sheets sync error:', err);
+    showToast('⚠️ 儲存成功，Sheets 同步失敗');
+  }
+}
+let data = JSON.parse(localStorage.getItem('btp_v2') || '[]');
+let currentTab = 'all';
+
+// ── INIT ──
+(function(){
+  document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+
+  // 問題1：自動帶入上次的學員名字
+  const savedName = localStorage.getItem('btp_clientName') || '';
+  document.getElementById('f-client').value = savedName;
+
+  document.getElementById('f-weight').addEventListener('input', updateChange);
+  document.getElementById('f-if-start').addEventListener('input', calcIF);
+  document.getElementById('f-if-end').addEventListener('input', calcIF);
+  document.getElementById('stepGoal').addEventListener('change', ()=>{ render(); drawChart(); });
+
+  // 學員名字變更時自動儲存
+  document.getElementById('f-client').addEventListener('change', function(){
+    localStorage.setItem('btp_clientName', this.value.trim());
+  });
+
+  ['f-time-row','f-steps-row','f-diet-row','f-water-row','f-mood-row'].forEach(id=>{
+    document.getElementById(id).querySelectorAll('.emo-opt').forEach(el=>{
+      el.addEventListener('click', function(){
+        this.closest('.emo-row').querySelectorAll('.emo-opt').forEach(e=>e.classList.remove('sel'));
+        this.classList.add('sel');
+      });
+    });
+  });
+  document.getElementById('f-ex-tags').querySelectorAll('.chk-item').forEach(el=>{
+    el.addEventListener('click', function(){ this.classList.toggle('sel'); });
+  });
+
+  render();
+  setTimeout(drawChart, 120);
+})();
+
+// ── HELPERS ──
+function getSelected(id){ const el=document.getElementById(id).querySelector('.sel'); return el?el.dataset.v:''; }
+function getMultiSelected(id){ return [...document.getElementById(id).querySelectorAll('.chk-item.sel')].map(e=>e.dataset.v); }
+function stepGoal(){ return parseInt(document.getElementById('stepGoal').value)||5000; }
+
+function updateChange(){
+  const v=parseFloat(document.getElementById('f-weight').value);
+  const el=document.getElementById('f-change');
+  if(isNaN(v)||data.length===0){el.textContent='—';el.style.color='';return;}
+  const d=parseFloat((v-data[data.length-1].weight).toFixed(2));
+  el.textContent=(d>0?'+':'')+d+' kg';
+  el.style.color=d>0?'var(--red)':d<0?'var(--green)':'var(--yellow)';
+}
+
+function parseTime4(s){
+  const str=s.replace(/\D/g,'').padStart(4,'0');
+  const h=parseInt(str.slice(0,2)), m=parseInt(str.slice(2,4));
+  if(isNaN(h)||isNaN(m)||h>23||m>59) return null;
+  return h*60+m;
+}
+
+function calcIF(){
+  const s=document.getElementById('f-if-start').value.trim();
+  const e=document.getElementById('f-if-end').value.trim();
+  const el=document.getElementById('f-if-result');
+  if(!s||!e){el.textContent='— 小時';return;}
+  const sm=parseTime4(s), em=parseTime4(e);
+  if(sm===null||em===null){el.textContent='格式錯誤';return;}
+  let f=sm+(24*60-em); if(f<=0)f+=24*60;
+  el.textContent=Math.floor(f/60)+'小時'+(f%60>0?' '+(f%60)+'分':'');
+}
+
+function calcIFStr(s,e){
+  if(!s||!e) return '';
+  const sm=parseTime4(s), em=parseTime4(e);
+  if(sm===null||em===null) return '';
+  let f=sm+(24*60-em); if(f<=0)f+=24*60;
+  return Math.floor(f/60)+'h'+(f%60>0?(f%60)+'m':'');
+}
+
+// ── ADD / DELETE ──
+function addEntry(){
+  const date=document.getElementById('f-date').value;
+  const wRaw=document.getElementById('f-weight').value;
+  const clientName=document.getElementById('f-client').value.trim();
+
+  if(!date||!wRaw){showToast('請填入日期與體重');return;}
+  if(!clientName){showToast('請填入學員姓名');return;}  // 問題1：名字必填提醒
+
+  const weight=parseFloat(parseFloat(wRaw).toFixed(2));
+  if(isNaN(weight)){showToast('體重格式錯誤');return;}
+
+  // 問題1：儲存學員名字
+  localStorage.setItem('btp_clientName', clientName);
+
+  const entry={
+    date, weight,
+    measTime: getSelected('f-time-row'),
+    exercise: getMultiSelected('f-ex-tags'),
+    stepsRange: getSelected('f-steps-row'),
+    steps: parseInt(document.getElementById('f-stepcount').value)||null,
+    diet: getSelected('f-diet-row'),
+    water: getSelected('f-water-row'),
+    mood: getSelected('f-mood-row'),
+    ifStart: document.getElementById('f-if-start').value,
+    ifEnd: document.getElementById('f-if-end').value,
+    note: document.getElementById('f-note').value.trim()
+  };
+
+  data=data.filter(e=>e.date!==date);
+  data.push(entry);
+  data.sort((a,b)=>a.date.localeCompare(b.date));
+  save(); render(); drawChart();
+  sendToSheets(entry);
+  showToast('✓ 已儲存並同步');
+
+  const d=new Date(date); d.setDate(d.getDate()+1);
+  document.getElementById('f-date').value=d.toISOString().split('T')[0];
+  ['f-weight','f-stepcount','f-if-start','f-if-end','f-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-change').textContent='—';
+  document.getElementById('f-change').style.color='';
+  document.getElementById('f-if-result').textContent='— 小時';
+}
+
+function deleteEntry(date){
+  if(!confirm('確定刪除 '+date+' 的記錄？')) return;
+  data=data.filter(e=>e.date!==date);
+  save(); render(); drawChart(); showToast('已刪除');
+}
+
+function clearAll(){
+  if(!confirm('確定清空所有資料？')) return;
+  data=[]; save(); render(); drawChart(); showToast('已清空');
+}
+
+function save(){ localStorage.setItem('btp_v2',JSON.stringify(data)); }
+
+// ── TABS / FILTER ──
+function setTab(tab,btn){
+  currentTab=tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function filtered(){
+  if(currentTab==='all'||data.length===0) return data;
+  const start=new Date(data[0].date);
+  const r={w12:[0,13],w34:[14,27],w56:[28,41],w78:[42,55]}[currentTab]||[0,999];
+  return data.filter(e=>{const d=Math.floor((new Date(e.date)-start)/86400000);return d>=r[0]&&d<=r[1];});
+}
+
+// ── RENDER ──
+function render(){
+  const bL=document.getElementById('bodyLeft');
+  const bR=document.getElementById('bodyRight');
+
+  if(data.length===0){
+    bL.innerHTML=''; bR.innerHTML='<tr><td colspan="9"><div class="empty">尚無記錄</div></td></tr>';
+    ['s-start','s-curr','s-total','s-days','s-rate'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) el.textContent=id==='s-days'?'0':'—';
+    });
+    document.getElementById('weekPill').textContent='第 — 週';
+    updateStepStats(); return;
+  }
+
+  const first=data[0], last=data[data.length-1];
+  const total=parseFloat((last.weight-first.weight).toFixed(2));
+  const wk=Math.max(1,Math.ceil((Math.floor((new Date(last.date)-new Date(first.date))/86400000)+1)/7));
+  document.getElementById('s-start').textContent=first.weight+' kg';
+  document.getElementById('s-curr').textContent=last.weight+' kg';
+  document.getElementById('s-total').textContent=(total>0?'+':'')+total+' kg';
+  document.getElementById('s-total').className='sval '+(total>0?'r':total<0?'g':'y');
+  document.getElementById('s-days').textContent=data.length;
+  document.getElementById('weekPill').textContent='第 '+wk+' 週';
+  updateStepStats();
+
+  const rows=[...filtered()].reverse();
+  const goal=stepGoal();
+  const dietE={'有控制':'🥗','普通':'🍱','有點爆':'🍰','爆掉了':'💥'};
+  const waterE={'很少':'💧','普通（有喝但不多）':'💧💧','夠（有刻意補水）':'💧💧💧','很夠（整天都有喝）':'💧💧💧💧'};
+  const moodE={'今天狀況不錯':'😄','普普通通':'😐','有點累':'😴','很累／快撐不住':'😵'};
+  const exS={'沒有運動':'😴','輕度-散步／日常':'🚶','有氧運動':'🏃','重量訓練':'💪','羽球／籃球／排球':'🏸羽／🏀籃／🏐排','其他':'⚡'};
+
+  let lHTML='', rHTML='';
+  rows.forEach(e=>{
+    const idx=data.findIndex(d=>d.date===e.date);
+    const prev=idx>0?data[idx-1].weight:null;
+    const diff=prev!==null?parseFloat((e.weight-prev).toFixed(2)):null;
+    const diffStr=diff===null?'—':((diff>0?'+':'')+diff);
+    const diffCls=diff===null?'':(diff>0?'rv':diff<0?'gv':'yv');
+    const exTags=(e.exercise||[]).map(ex=>`<span class="etag">${exS[ex]||ex}</span>`).join('');
+    const ok=e.steps&&e.steps>=goal;
+    const stepsStr=e.steps?e.steps.toLocaleString():(e.stepsRange||'—');
+    const stepsCls=e.steps?(ok?'gv':'rv'):'';
+    const ifStr=calcIFStr(e.ifStart,e.ifEnd);
+    const sd=e.date.replace(/^\d{4}-/,'').replace('-','/');
+
+    lHTML+=`<tr><td><div class="left-cell">
+      <div class="f-date">${sd}</div>
+      <div class="f-w">${e.weight}</div>
+      <div class="f-chg ${diffCls}">${diffStr}</div>
+    </div></td></tr>`;
+
+    rHTML+=`<tr>
+      <td><div class="right-cell">${exTags||'—'}</div></td>
+      <td><div class="right-cell ${stepsCls}">${stepsStr}</div></td>
+      <td><div class="right-cell">${e.steps?(ok?'✅':'❌'):'—'}</div></td>
+      <td><div class="right-cell">${dietE[e.diet]||'—'}</div></td>
+      <td><div class="right-cell">${waterE[e.water]||'—'}</div></td>
+      <td><div class="right-cell">${moodE[e.mood]||'—'}</div></td>
+      <td><div class="right-cell" style="color:var(--blue);font-family:var(--mono);font-size:.72rem">${ifStr||'—'}</div></td>
+      <td><div class="right-cell" style="color:var(--muted2);font-size:.72rem;max-width:100px;overflow:hidden;text-overflow:ellipsis">${e.note||''}</div></td>
+      <td><div class="right-cell"><button class="del-btn" onclick="deleteEntry('${e.date}')">✕</button></div></td>
+    </tr>`;
+  });
+
+  bL.innerHTML=lHTML||'';
+  bR.innerHTML=rHTML||'<tr><td colspan="9"><div class="empty">此週段無記錄</div></td></tr>';
+
+  // sync row heights
+  requestAnimationFrame(()=>{
+    const ls=document.querySelectorAll('#bodyLeft tr');
+    const rs=document.querySelectorAll('#bodyRight tr');
+    // reset first
+    ls.forEach(r=>r.style.height='');
+    rs.forEach(r=>r.style.height='');
+    ls.forEach((lr,i)=>{
+      if(!rs[i]) return;
+      const h=Math.max(lr.getBoundingClientRect().height, rs[i].getBoundingClientRect().height);
+      lr.style.height=h+'px'; rs[i].style.height=h+'px';
+    });
+    // set log-wrap height to match left table
+    const tbl=document.getElementById('tblLeft');
+    document.getElementById('logWrap').style.minHeight=tbl.getBoundingClientRect().height+'px';
+  });
+}
+
+function updateStepStats(){
+  const goal=stepGoal();
+  const ws=data.filter(e=>e.steps&&e.steps>0);
+  if(ws.length===0){
+    ['ss-hit','ss-miss','ss-rate','ss-avg','ss-max','ss-min','ss-total','ss-days','s-rate'].forEach(id=>{
+      const el=document.getElementById(id); if(el) el.textContent=id.includes('hit')||id.includes('miss')||id.includes('days')?'0':'—';
+    }); return;
+  }
+  const hit=ws.filter(e=>e.steps>=goal).length;
+  const miss=ws.length-hit;
+  const rate=Math.round(hit/ws.length*100);
+  const avg=Math.round(ws.reduce((s,e)=>s+e.steps,0)/ws.length);
+  const mx=Math.max(...ws.map(e=>e.steps));
+  const mn=Math.min(...ws.map(e=>e.steps));
+  const tot=ws.reduce((s,e)=>s+e.steps,0);
+  document.getElementById('ss-hit').textContent=hit;
+  document.getElementById('ss-miss').textContent=miss;
+  document.getElementById('ss-rate').textContent=rate+'%';
+  document.getElementById('ss-avg').textContent=avg.toLocaleString();
+  document.getElementById('ss-max').textContent=mx.toLocaleString();
+  document.getElementById('ss-min').textContent=mn.toLocaleString();
+  document.getElementById('ss-total').textContent=tot.toLocaleString();
+  document.getElementById('ss-days').textContent=ws.length;
+  document.getElementById('s-rate').textContent=rate+'%';
+}
+
+// ── CHART ──
+function drawChart(){ requestAnimationFrame(_drawChart); }
+
+function _drawChart(){
+  const canvas=document.getElementById('wChart');
+  const scroll=document.getElementById('chartScroll');
+  const inner=document.getElementById('chartInner');
+  const dpr=window.devicePixelRatio||1;
+  const H=140;
+  const pad={l:50,r:24,t:12,b:24};
+
+  // width: at least scroll container, expand for many points
+  const scrollW=scroll.getBoundingClientRect().width||300;
+  const minW=data.length>1 ? pad.l+pad.r+(data.length-1)*34 : 0;
+  const W=Math.max(scrollW-1, minW);  // -1 avoids triggering scroll when equal
+
+  canvas.style.width=W+'px';
+  canvas.style.height=H+'px';
+  inner.style.width=W+'px';
+  inner.style.height=H+'px';
+  canvas.width=W*dpr;
+  canvas.height=H*dpr;
+
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+
+  if(data.length<2){
+    ctx.fillStyle='#4a6870'; ctx.font='11px IBM Plex Mono'; ctx.textAlign='center';
+    ctx.fillText('至少需要 2 筆才能顯示圖表',W/2,H/2); return;
+  }
+
+  const weights=data.map(e=>e.weight);
+  const mn=Math.min(...weights)-0.5, mx=Math.max(...weights)+0.5;
+  const cW=W-pad.l-pad.r, cH=H-pad.t-pad.b;
+  const tx=i=>pad.l+(data.length===1?cW/2:(i/(data.length-1))*cW);
+  const ty=w=>pad.t+(1-(w-mn)/(mx-mn))*cH;
+
+  // grid lines + Y labels
+  for(let i=0;i<=4;i++){
+    const y=pad.t+(i/4)*cH;
+    ctx.strokeStyle='#1e2d30'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+cW,y); ctx.stroke();
+    const v=mx-(i/4)*(mx-mn);
+    ctx.fillStyle='#4a6870'; ctx.font='9px IBM Plex Mono'; ctx.textAlign='right';
+    ctx.fillText(v.toFixed(1),pad.l-5,y+3);
+  }
+
+  // fill under line
+  const g=ctx.createLinearGradient(0,pad.t,0,pad.t+cH);
+  g.addColorStop(0,'rgba(0,229,160,.15)'); g.addColorStop(1,'rgba(0,229,160,0)');
+  ctx.beginPath();
+  ctx.moveTo(tx(0),ty(data[0].weight));
+  data.forEach((_,i)=>ctx.lineTo(tx(i),ty(data[i].weight)));
+  ctx.lineTo(tx(data.length-1),H-pad.b);
+  ctx.lineTo(tx(0),H-pad.b);
+  ctx.closePath(); ctx.fillStyle=g; ctx.fill();
+
+  // line
+  ctx.beginPath();
+  ctx.moveTo(tx(0),ty(data[0].weight));
+  data.forEach((_,i)=>ctx.lineTo(tx(i),ty(data[i].weight)));
+  ctx.strokeStyle='#00e5a0'; ctx.lineWidth=2; ctx.lineJoin='round'; ctx.stroke();
+
+  // dots (outer ring + inner)
+  data.forEach((_,i)=>{
+    const x=tx(i), y=ty(data[i].weight);
+    ctx.beginPath(); ctx.arc(x,y,5,0,Math.PI*2); ctx.fillStyle='rgba(0,229,160,.3)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2); ctx.fillStyle='#00e5a0'; ctx.fill();
+  });
+
+  // store for tap
+  canvas._dots=data.map((_,i)=>({x:tx(i),y:ty(data[i].weight),idx:i}));
+  canvas._W=W; canvas._H=H;
+}
+
+// chart tap / click
+function handleChartTap(e){
+  const canvas=document.getElementById('wChart');
+  if(!canvas._dots||data.length<2) return;
+  const rect=canvas.getBoundingClientRect();
+  // scaleX accounts for devicePixelRatio scaling
+  const cx=e.touches?e.touches[0].clientX:e.clientX;
+  const cy=e.touches?e.touches[0].clientY:e.clientY;
+  // convert to canvas coordinate space
+  const x=(cx-rect.left)*(canvas._W/rect.width);
+  const y=(cy-rect.top)*(canvas._H/rect.height);
+
+  let best=null, bestD=40;
+  canvas._dots.forEach(d=>{
+    const dist=Math.sqrt((x-d.x)**2+(y-d.y)**2);
+    if(dist<bestD){bestD=dist;best=d;}
+  });
+
+  const tip=document.getElementById('chartTip');
+  if(!best){tip.style.display='none';return;}
+
+  const entry=data[best.idx];
+  const prev=best.idx>0?data[best.idx-1].weight:null;
+  const diff=prev!==null?parseFloat((entry.weight-prev).toFixed(2)):null;
+  const diffStr=diff===null?'':(diff>0?'+':'')+diff+' kg';
+  const diffColor=diff===null?'':(diff>0?'#ff4d6d':diff<0?'#00e5a0':'#ffd166');
+  const sd=entry.date.replace(/^\d{4}-/,'').replace('-','/');
+
+  tip.innerHTML=`<div class="ct-date">${sd}</div><div class="ct-w">${entry.weight} kg</div>${diffStr?`<div class="ct-c" style="color:${diffColor}">${diffStr}</div>`:''}`;
+
+  // position: show left of dot if in right half
+  const tipW=115, tipH=68;
+  const dotPx=best.x*(rect.width/canvas._W);
+  const dotPy=best.y*(rect.height/canvas._H);
+  let left=dotPx+10, top=dotPy-tipH/2;
+  if(dotPx>rect.width*0.55) left=dotPx-tipW-10;
+  if(top<2) top=2;
+  if(top+tipH>rect.height-2) top=rect.height-tipH-2;
+  tip.style.left=left+'px'; tip.style.top=top+'px'; tip.style.display='block';
+
+  clearTimeout(canvas._tt);
+  canvas._tt=setTimeout(()=>tip.style.display='none',3000);
+  e.preventDefault();
+}
+
+document.getElementById('wChart').addEventListener('click',handleChartTap);
+document.getElementById('wChart').addEventListener('touchstart',handleChartTap,{passive:false});
+document.addEventListener('click',e=>{ if(e.target.id!=='wChart') document.getElementById('chartTip').style.display='none'; });
+
+// ── EXPORT ──
+function exportCSV(){
+  if(!data.length){showToast('無資料');return;}
+  const goal=stepGoal();
+  const hdr='日期,體重(kg),變化(kg),量測時間,運動模式,步數區間,當日步數,達標,飲食,飲水,狀態,第一餐,最後一餐,斷食時數,備註';
+  const rows=data.map((e,i)=>{
+    const prev=i>0?data[i-1].weight:null;
+    const diff=prev!==null?parseFloat((e.weight-prev).toFixed(2)):'';
+    const ok=e.steps?(e.steps>=goal?'達標':'未達標'):'';
+    return `${e.date},${e.weight},${diff},${e.measTime},"${(e.exercise||[]).join('+')}",${ e.stepsRange||''},${e.steps||''},${ok},${e.diet},${e.water},${e.mood},${e.ifStart||''},${e.ifEnd||''},${calcIFStr(e.ifStart,e.ifEnd)},"${e.note||''}"`;
+  });
+  const blob=new Blob(['\uFEFF'+[hdr,...rows].join('\n')],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='體重追蹤_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click(); showToast('✓ CSV 匯出完成');
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+window.addEventListener('resize',()=>{ drawChart(); });
+</script>
+</body>
+</html>

@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>碳循環減脂計算器</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #111114;
+  --surface: #1a1a1f;
+  --surface2: #222228;
+  --border: #2e2e38;
+  --high: #ff6b35;
+  --high-dim: rgba(255,107,53,0.15);
+  --mid: #f7c948;
+  --mid-dim: rgba(247,201,72,0.12);
+  --low: #4fc3f7;
+  --low-dim: rgba(79,195,247,0.12);
+  --protein: #a78bfa;
+  --fat: #6ee7b7;
+  --text: #f0f0f5;
+  --muted: #6b6b7e;
+  --border-light: #3a3a48;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans TC', sans-serif;
+  min-height: 100vh;
+}
+
+/* Noise texture overlay */
+body::after {
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none;
+  z-index:9999;
+  opacity:0.5;
+}
+
+.hero {
+  background: linear-gradient(160deg, #1a1a1f 0%, #111114 60%);
+  border-bottom: 1px solid var(--border);
+  padding: 40px 24px 32px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content:'CARB\ACYCLING';
+  position:absolute;
+  font-family:'Bebas Neue',sans-serif;
+  font-size: 220px;
+  color: rgba(255,255,255,0.018);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  white-space: pre;
+  line-height:0.85;
+  pointer-events:none;
+  letter-spacing:0.05em;
+}
+
+.hero-tag {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  background: rgba(255,107,53,0.12);
+  border: 1px solid rgba(255,107,53,0.35);
+  color: var(--high);
+  padding: 4px 14px;
+  border-radius: 4px;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(44px, 9vw, 80px);
+  letter-spacing: 0.04em;
+  line-height: 1;
+  background: linear-gradient(135deg, #fff 30%, #999 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 10px;
+}
+
+.hero p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+/* Main layout */
+.main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 20px 60px;
+}
+
+/* Input section */
+.input-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  margin-bottom: 28px;
+  animation: fadeUp 0.5s ease;
+}
+
+.section-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-title::after {
+  content:'';
+  flex:1;
+  height:1px;
+  background: var(--border);
+}
+
+.input-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.input-block label {
+  display:block;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.input-block input,
+.input-block select {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  padding: 11px 14px;
+  color: var(--text);
+  font-size: 15px;
+  font-family: 'JetBrains Mono', monospace;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  -moz-appearance: textfield;
+}
+
+.input-block input::-webkit-inner-spin-button { -webkit-appearance:none; }
+
+.input-block input:focus,
+.input-block select:focus {
+  outline: none;
+  border-color: var(--high);
+  box-shadow: 0 0 0 3px rgba(255,107,53,0.12);
+}
+
+.calc-btn {
+  width:100%;
+  padding: 15px;
+  background: var(--high);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 4px;
+}
+
+.calc-btn:hover {
+  background: #ff8255;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(255,107,53,0.35);
+}
+
+.calc-btn:active { transform: translateY(0); }
+
+/* TDEE display */
+.tdee-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  background: var(--surface2);
+  border-radius: 10px;
+  padding: 16px 24px;
+  margin-bottom: 28px;
+  border: 1px solid var(--border-light);
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.tdee-item {
+  text-align: center;
+}
+
+.tdee-item .val {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 32px;
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
+
+.tdee-item .lbl {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.tdee-div {
+  width:1px;
+  height:40px;
+  background: var(--border);
+}
+
+/* Cards grid */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+@media (max-width: 640px) {
+  .cards-grid { grid-template-columns: 1fr; }
+}
+
+.day-card {
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid;
+  position: relative;
+  overflow: hidden;
+  animation: fadeUp 0.5s ease both;
+}
+
+.day-card::before {
+  content:'';
+  position:absolute;
+  top:-40px; right:-40px;
+  width:120px; height:120px;
+  border-radius:50%;
+  opacity:0.15;
+  filter:blur(30px);
+}
+
+.day-card.high {
+  background: var(--high-dim);
+  border-color: rgba(255,107,53,0.35);
+}
+.day-card.high::before { background: var(--high); }
+
+.day-card.mid {
+  background: var(--mid-dim);
+  border-color: rgba(247,201,72,0.3);
+}
+.day-card.mid::before { background: var(--mid); }
+
+.day-card.low {
+  background: var(--low-dim);
+  border-color: rgba(79,195,247,0.3);
+}
+.day-card.low::before { background: var(--low); }
+
+.day-label {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.15em;
+  margin-bottom: 4px;
+  opacity: 0.7;
+}
+
+.day-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 34px;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  margin-bottom: 16px;
+}
+
+.day-card.high .day-title { color: var(--high); }
+.day-card.mid .day-title { color: var(--mid); }
+.day-card.low .day-title { color: var(--low); }
+
+.day-calories {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.day-cal-label {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+.macro-list { display:flex; flex-direction:column; gap:10px; }
+
+.macro-row {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+
+.macro-bar-wrap {
+  flex:1;
+  height:4px;
+  background: rgba(255,255,255,0.06);
+  border-radius:4px;
+  overflow:hidden;
+}
+
+.macro-bar {
+  height:100%;
+  border-radius:4px;
+  transition: width 0.8s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+.macro-name {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+  min-width: 20px;
+  text-transform: uppercase;
+  letter-spacing:0.06em;
+}
+
+.macro-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 55px;
+  text-align: right;
+}
+
+/* Week plan */
+.week-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  margin-bottom: 28px;
+  animation: fadeUp 0.5s ease 0.1s both;
+}
+
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+@media (max-width:560px) {
+  .week-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.week-day {
+  background: var(--surface2);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 6px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.week-day .wd-name {
+  font-size: 10px;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 6px;
+  letter-spacing:0.06em;
+}
+
+.week-day .wd-type {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 14px;
+  letter-spacing:0.05em;
+}
+
+.week-day.high-day { border-color: rgba(255,107,53,0.5); background: var(--high-dim); }
+.week-day.high-day .wd-type { color: var(--high); }
+
+.week-day.mid-day { border-color: rgba(247,201,72,0.4); background: var(--mid-dim); }
+.week-day.mid-day .wd-type { color: var(--mid); }
+
+.week-day.low-day { border-color: rgba(79,195,247,0.35); background: var(--low-dim); }
+.week-day.low-day .wd-type { color: var(--low); }
+
+.week-day:hover { transform: translateY(-2px); }
+
+.week-legend {
+  display:flex;
+  gap:16px;
+  margin-top:16px;
+  flex-wrap:wrap;
+}
+
+.legend-item {
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:12px;
+  color:var(--muted);
+  cursor:pointer;
+}
+
+.legend-dot {
+  width:10px;
+  height:10px;
+  border-radius:2px;
+}
+
+/* Tips section */
+.tips-section {
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap:12px;
+  margin-bottom:28px;
+}
+
+.tip-card {
+  background: var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:18px 20px;
+  animation: fadeUp 0.5s ease 0.2s both;
+}
+
+.tip-card h4 {
+  font-size:13px;
+  font-weight:600;
+  margin-bottom:8px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.tip-card p {
+  font-size:12px;
+  color:var(--muted);
+  line-height:1.7;
+}
+
+/* Placeholder state */
+.placeholder {
+  text-align:center;
+  padding:48px 20px;
+  color:var(--muted);
+}
+
+.placeholder .big {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:64px;
+  letter-spacing:0.05em;
+  opacity:0.15;
+  line-height:1;
+  margin-bottom:12px;
+}
+
+.placeholder p { font-size:14px; }
+
+/* Goal forecast */
+.forecast-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.forecast-item {
+  background: var(--surface2);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+
+.forecast-item .f-val {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 30px;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.forecast-item .f-lbl {
+  font-size: 10px;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.progress-wrap {
+  margin-top: 4px;
+}
+
+.progress-track {
+  height: 10px;
+  background: var(--surface2);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 10px 0 6px;
+  border: 1px solid var(--border);
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--low), var(--fat), var(--high));
+  transition: width 1s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+.progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.milestone-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.milestone {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--surface2);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.milestone .m-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.milestone .m-label { color: var(--muted); min-width: 80px; font-size: 12px; }
+.milestone .m-val { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; }
+.milestone .m-date { margin-left: auto; color: var(--muted); font-size: 12px; font-family: 'JetBrains Mono', monospace; }
+
+.warn-box {
+  background: rgba(247,201,72,0.08);
+  border: 1px solid rgba(247,201,72,0.3);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 12px;
+  color: var(--mid);
+  line-height: 1.7;
+  margin-top: 12px;
+}
+
+  from { opacity:0; transform:translateY(16px); }
+  to { opacity:1; transform:translateY(0); }
+}
+
+/* Weekly avg bar */
+.avg-row {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  font-size:13px;
+  padding:10px 0;
+  border-top:1px solid var(--border);
+  margin-top:16px;
+}
+.avg-row .avg-label { color:var(--muted); min-width:80px; font-family:'JetBrains Mono',monospace; font-size:11px; }
+.avg-row .avg-val { font-family:'JetBrains Mono',monospace; font-weight:600; }
+.avg-row .avg-note { color:var(--muted); font-size:11px; margin-left:auto; }
+
+/* Brand */
+.brand-tag { margin-bottom: 14px; }
+.brand-name { font-family:'Bebas Neue',sans-serif; font-size:22px; color:var(--high); letter-spacing:0.12em; }
+.brand-num  { font-family:'JetBrains Mono',monospace; font-size:16px; color:var(--muted); letter-spacing:0.08em; }
+
+.ig-btn-hero {
+  display:inline-flex; align-items:center; gap:8px;
+  margin-top:18px;
+  background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+  color:#fff; text-decoration:none;
+  padding:10px 22px; border-radius:24px; font-size:14px; font-weight:600;
+  font-family:'Noto Sans TC',sans-serif; transition:all 0.2s;
+}
+.ig-btn-hero:hover { opacity:0.88; transform:translateY(-2px); box-shadow:0 8px 20px rgba(220,39,67,0.4); }
+
+/* Footer */
+footer { background:var(--surface); border-top:1px solid var(--border); padding:32px 20px; margin-top:16px; }
+.footer-inner { max-width:960px; margin:0 auto; display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
+.footer-brand { display:flex; align-items:baseline; gap:6px; }
+.footer-slogan { font-size:12px; color:var(--muted); }
+
+.line-btn-footer {
+  display:inline-flex; align-items:center; gap:7px;
+  background:rgba(6,199,85,0.12); border:1px solid rgba(6,199,85,0.35);
+  color:#06C755; text-decoration:none; padding:7px 16px; border-radius:20px;
+  font-size:13px; font-family:'JetBrains Mono',monospace; font-weight:600; transition:all 0.2s;
+}
+.line-btn-footer:hover { background:rgba(6,199,85,0.22); transform:translateY(-1px); }
+.footer-note { margin-left:auto; font-size:11px; color:var(--muted); font-family:'JetBrains Mono',monospace; }
+.footer-cta { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.footer-cta-text { font-size:13px; color:var(--text-muted); white-space:nowrap; }
+@media (max-width:600px) { .footer-note { margin-left:0; } }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="brand-tag">
+    <span class="brand-name">ACEFIT</span><span class="brand-num">1108</span>
+  </div>
+  <div class="hero-tag">💪 FITNESS TOOL</div>
+  <h1>碳水循環<br>減脂計算器</h1>
+  <p>輸入體重與體脂率，以瘦體重為基準精準規劃高碳日 · 中碳日 · 低碳日</p>
+  <a class="ig-btn-hero" href="https://www.instagram.com/acefit1108?igsh=YmIzbnBxNjV3N2Jn" target="_blank">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+    追蹤 @acefit1108
+  </a>
+</div>
+
+<div class="main">
+
+  <!-- Input -->
+  <div class="input-section">
+    <div class="section-title">身體數據</div>
+
+    <div class="input-grid">
+      <div class="input-block">
+        <label>體重 (kg)</label>
+        <input type="number" id="weight" value="70" min="40" max="200" oninput="autoCalc()">
+      </div>
+      <div class="input-block">
+        <label>體脂率 (%)</label>
+        <input type="number" id="bodyfat" value="20" min="5" max="50" step="0.5" oninput="autoCalc()">
+      </div>
+      <div class="input-block">
+        <label>活動量</label>
+        <select id="activity" onchange="autoCalc()">
+          <option value="1.2">久坐（幾乎不運動）</option>
+          <option value="1.375">輕度（每週1-3天）</option>
+          <option value="1.55" selected>中度（每週3-5天）</option>
+          <option value="1.725">高度（每週6-7天）</option>
+          <option value="1.9">極高（運動員/體力勞動）</option>
+        </select>
+      </div>
+      <div class="input-block">
+        <label>目標體重 (kg)</label>
+        <input type="number" id="target_weight" value="78" min="40" max="200" step="0.5" oninput="autoCalc()">
+      </div>
+      <div class="input-block">
+        <label>循環強度</label>
+        <select id="goal" onchange="autoCalc()">
+          <option value="0">溫和（高-150 / 中-400 / 低-700）</option>
+          <option value="1" selected>標準（高-200 / 中-500 / 低-850）</option>
+          <option value="2">積極（高-300 / 中-650 / 低-1000）</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- LBM display strip -->
+    <div id="lbm-strip" style="display:none; background:var(--surface2); border:1px solid var(--border-light); border-radius:8px; padding:12px 18px; display:flex; gap:24px; flex-wrap:wrap; margin-top:4px;">
+      <div>
+        <span style="font-size:10px; color:var(--muted); font-family:'JetBrains Mono',monospace; letter-spacing:0.1em; text-transform:uppercase;">瘦體重 LBM</span><br>
+        <span id="lbm-val" style="font-family:'Bebas Neue',sans-serif; font-size:26px; color:var(--fat);">—</span>
+        <span style="font-size:12px; color:var(--muted);"> kg</span>
+      </div>
+      <div>
+        <span style="font-size:10px; color:var(--muted); font-family:'JetBrains Mono',monospace; letter-spacing:0.1em; text-transform:uppercase;">體脂重量</span><br>
+        <span id="fat-mass-val" style="font-family:'Bebas Neue',sans-serif; font-size:26px; color:var(--muted);">—</span>
+        <span style="font-size:12px; color:var(--muted);"> kg</span>
+      </div>
+      <div style="margin-left:auto; text-align:right;">
+        <span style="font-size:10px; color:var(--muted); font-family:'JetBrains Mono',monospace; letter-spacing:0.1em; text-transform:uppercase;">公式</span><br>
+        <span style="font-size:12px; color:var(--muted); line-height:1.6;">Katch-McArdle<br>（以瘦體重計算 BMR）</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TDEE row -->
+  <div class="tdee-row" id="tdee-row" style="display:none;">
+    <div class="tdee-item">
+      <div class="val" id="tdee-val" style="color:var(--high)">—</div>
+      <div class="lbl">TDEE (維持熱量)</div>
+    </div>
+    <div class="tdee-div"></div>
+    <div class="tdee-item">
+      <div class="val" id="bmr-val" style="color:var(--muted)">—</div>
+      <div class="lbl">BMR · Katch-McArdle</div>
+    </div>
+    <div class="tdee-div"></div>
+    <div class="tdee-item">
+      <div class="val" id="protein-target" style="color:var(--protein)">—</div>
+      <div class="lbl">蛋白質目標（LBM×2.5g）</div>
+    </div>
+    <div class="tdee-div"></div>
+    <div class="tdee-item">
+      <div class="val" id="deficit-val" style="color:var(--low)">—</div>
+      <div class="lbl">每日目標赤字</div>
+    </div>
+  </div>
+
+  <!-- Day cards -->
+  <div id="cards-area">
+    <div class="placeholder">
+      <div class="big">HIGH<br>MID<br>LOW</div>
+      <p>輸入你的基本資料，自動計算三種碳水日的巨量營養素</p>
+    </div>
+  </div>
+
+  <!-- Week plan -->
+  <div class="week-section" id="week-section" style="display:none;">
+    <div class="section-title">週計劃排程</div>
+    <p style="font-size:12px; color:var(--muted); margin-bottom:16px; line-height:1.6;">
+      點擊每天切換碳水日類型。推薦：訓練日用高碳或中碳日，休息日用低碳日。
+    </p>
+
+    <div class="week-grid" id="week-grid"></div>
+
+    <div class="week-legend">
+      <div class="legend-item" onclick="setAllDays('high')">
+        <div class="legend-dot" style="background:var(--high)"></div>高碳日
+      </div>
+      <div class="legend-item" onclick="setAllDays('mid')">
+        <div class="legend-dot" style="background:var(--mid)"></div>中碳日
+      </div>
+      <div class="legend-item" onclick="setAllDays('low')">
+        <div class="legend-dot" style="background:var(--low)"></div>低碳日
+      </div>
+    </div>
+
+    <div class="avg-row">
+      <span class="avg-label">週平均熱量</span>
+      <span class="avg-val" id="week-avg">—</span>
+      <span class="avg-note" id="week-note"></span>
+    </div>
+  </div>
+
+  <!-- Goal forecast -->
+  <div class="week-section" id="goal-section" style="display:none;">
+    <div class="section-title">🎯 達標預估</div>
+    <div id="goal-content"></div>
+  </div>
+
+  <!-- Tips -->
+  <div class="tips-section" id="tips-section" style="display:none;">
+    <div class="tip-card">
+      <h4><span style="color:var(--high)">🔥</span> 高碳日怎麼吃？</h4>
+      <p>安排在最重的訓練日（如腿日、背日）。碳水優先選燕麥、地瓜、白米、義大利麵。訓練前後攝取為主，減少脂肪攝取。</p>
+    </div>
+    <div class="tip-card">
+      <h4><span style="color:var(--mid)">⚡</span> 中碳日怎麼吃？</h4>
+      <p>適合中等強度訓練日（胸、肩、手臂）。碳水均勻分配到每餐，維持訓練表現同時製造適度熱量缺口。</p>
+    </div>
+    <div class="tip-card">
+      <h4><span style="color:var(--low)">❄️</span> 低碳日怎麼吃？</h4>
+      <p>安排在休息日或有氧日。提高脂肪比例、維持高蛋白，啟動脂肪燃燒。可搭配低強度有氧（LISS）效果更佳。</p>
+    </div>
+    <div class="tip-card">
+      <h4><span style="color:var(--protein)">💜</span> 蛋白質以瘦體重計算</h4>
+      <p>蛋白質設定為瘦體重 × 2.5g，比用總體重更精準。體脂高的人用總體重會高估需求；用 LBM 才是真正保護肌肉的量。分散到 4-5 餐攝取。</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const DAYS = ['週一','週二','週三','週四','週五','週六','週日'];
+const TYPES = ['high','mid','low'];
+const TYPE_LABELS = { high:'高碳', mid:'中碳', low:'低碳' };
+let weekSchedule = ['high','mid','high','mid','low','low','low'];
+let macros = null;
+
+function autoCalc() {
+  const w       = parseFloat(document.getElementById('weight').value)   || 70;
+  const bf      = parseFloat(document.getElementById('bodyfat').value)  || 20;
+  const activity= parseFloat(document.getElementById('activity').value);
+  const intensity = parseInt(document.getElementById('goal').value);
+
+  // ── 核心：以瘦體重為基礎 ──────────────────────────
+  const lbm     = +(w * (1 - bf / 100)).toFixed(1);
+  const fatMass = +(w - lbm).toFixed(1);
+
+  // Katch-McArdle：BMR = 370 + 21.6 × LBM(kg)
+  const bmr  = Math.round(370 + 21.6 * lbm);
+  const tdee = Math.round(bmr * activity);
+
+  // 蛋白質：LBM × 2.5g
+  const protein    = Math.round(lbm * 2.5);
+  const proteinCal = protein * 4;
+
+  // 三組赤字 preset（三天全在赤字，靠高低差製造節律）
+  // 預設 3高2中2低，週平均赤字分別約 370 / 500 / 620 kcal
+  const presets = [
+    { h: 150, m: 400, l: 700  },  // 溫和
+    { h: 200, m: 500, l: 850  },  // 標準
+    { h: 300, m: 650, l: 1000 },  // 積極
+  ];
+  const p = presets[intensity];
+  const deficit = Math.round((p.h*3 + p.m*2 + p.l*2) / 7); // 週均赤字（顯示用）
+
+  const highCal = Math.round(tdee - p.h);
+  const midCal  = Math.round(tdee - p.m);
+  const lowCal  = Math.round(tdee - p.l);
+
+  // 脂肪：以 LBM 為基準
+  // 高碳日脂肪低（讓出熱量空間給碳水），低碳日脂肪較高
+  function getMacros(cal, fatPerLBM) {
+    const fat    = Math.round(lbm * fatPerLBM);
+    const fatCal = fat * 9;
+    const carb   = Math.max(0, Math.round((cal - proteinCal - fatCal) / 4));
+    return { cal, protein, fat, carb };
+  }
+
+  macros = {
+    high: getMacros(highCal, 0.6),   // 低脂高碳
+    mid:  getMacros(midCal,  0.8),   // 均衡
+    low:  getMacros(lowCal,  1.0),   // 高脂低碳
+    tdee, bmr, lbm, deficit,
+  };
+
+  // 顯示 LBM strip
+  const strip = document.getElementById('lbm-strip');
+  strip.style.display = 'flex';
+  document.getElementById('lbm-val').textContent = lbm;
+  document.getElementById('fat-mass-val').textContent = fatMass;
+
+  // 顯示 TDEE row
+  document.getElementById('tdee-row').style.display = 'flex';
+  document.getElementById('tdee-val').textContent = tdee.toLocaleString() + ' kcal';
+  document.getElementById('bmr-val').textContent  = bmr.toLocaleString()  + ' kcal';
+  document.getElementById('protein-target').textContent = protein + 'g';
+  document.getElementById('deficit-val').textContent = '~-' + deficit + ' kcal/週均';
+
+  renderCards();
+  renderWeek();
+  document.getElementById('week-section').style.display = 'block';
+  document.getElementById('tips-section').style.display = 'grid';
+}
+
+function renderCards() {
+  if (!macros) return;
+
+  const maxCarb = Math.max(macros.high.carb, macros.mid.carb, macros.low.carb, 1);
+  const maxFat  = Math.max(macros.high.fat,  macros.mid.fat,  macros.low.fat, 1);
+  const maxProt = macros.high.protein;
+
+  function card(key, delay) {
+    const m = macros[key];
+    const color = key === 'high' ? 'var(--high)' : key === 'mid' ? 'var(--mid)' : 'var(--low)';
+    const label = key === 'high' ? '訓練重訓日' : key === 'mid' ? '中等訓練日' : '休息 / 有氧日';
+    const title = key === 'high' ? '高碳日' : key === 'mid' ? '中碳日' : '低碳日';
+    const carbPct = Math.round(m.carb / maxCarb * 100);
+    const fatPct  = Math.round(m.fat  / maxFat  * 100);
+    const protPct = Math.round(m.protein / maxProt * 100);
+
+    return `
+    <div class="day-card ${key}" style="animation-delay:${delay}s">
+      <div class="day-label">${label}</div>
+      <div class="day-title">${title}</div>
+      <div class="day-calories">${m.cal.toLocaleString()}</div>
+      <div class="day-cal-label">KCAL / DAY</div>
+      <div class="macro-list">
+        <div class="macro-row">
+          <span class="macro-name">碳</span>
+          <div class="macro-bar-wrap"><div class="macro-bar" style="width:${carbPct}%; background:${color}"></div></div>
+          <span class="macro-val" style="color:${color}">${m.carb}g</span>
+        </div>
+        <div class="macro-row">
+          <span class="macro-name">蛋</span>
+          <div class="macro-bar-wrap"><div class="macro-bar" style="width:${protPct}%; background:var(--protein)"></div></div>
+          <span class="macro-val" style="color:var(--protein)">${m.protein}g</span>
+        </div>
+        <div class="macro-row">
+          <span class="macro-name">脂</span>
+          <div class="macro-bar-wrap"><div class="macro-bar" style="width:${fatPct}%; background:var(--fat)"></div></div>
+          <span class="macro-val" style="color:var(--fat)">${m.fat}g</span>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('cards-area').innerHTML = `
+    <div class="cards-grid">
+      ${card('high', 0)}
+      ${card('mid', 0.07)}
+      ${card('low', 0.14)}
+    </div>`;
+}
+
+function renderWeek() {
+  const grid = document.getElementById('week-grid');
+  grid.innerHTML = weekSchedule.map((type, i) => `
+    <div class="week-day ${type}-day" onclick="cycleDay(${i})">
+      <div class="wd-name">${DAYS[i]}</div>
+      <div class="wd-type">${TYPE_LABELS[type]}</div>
+    </div>
+  `).join('');
+  updateWeekAvg();
+}
+
+function cycleDay(i) {
+  const idx = TYPES.indexOf(weekSchedule[i]);
+  weekSchedule[i] = TYPES[(idx + 1) % 3];
+  renderWeek();
+}
+
+function setAllDays(type) {
+  weekSchedule = weekSchedule.map(() => type);
+  renderWeek();
+}
+
+function updateWeekAvg() {
+  if (!macros) return;
+  let total = 0;
+  weekSchedule.forEach(t => total += macros[t].cal);
+  const avg = Math.round(total / 7);
+  const weeklyDeficit = (macros.tdee - avg) * 7;
+  document.getElementById('week-avg').textContent = avg.toLocaleString() + ' kcal / 天';
+  const diff = avg - macros.tdee;
+  const sign = diff > 0 ? '+' : '';
+  const note = diff < 0 ? `週赤字約 ${Math.abs(diff*7).toLocaleString()} kcal` : `週盈餘約 ${Math.abs(diff*7).toLocaleString()} kcal`;
+  document.getElementById('week-note').style.color = diff < 0 ? 'var(--low)' : 'var(--high)';
+  document.getElementById('week-note').textContent = `(${sign}${diff} vs TDEE) · ${note}`;
+
+  renderGoal(weeklyDeficit);
+}
+
+function renderGoal(weeklyDeficit) {
+  const w          = parseFloat(document.getElementById('weight').value) || 0;
+  const targetW    = parseFloat(document.getElementById('target_weight').value) || 0;
+  const section    = document.getElementById('goal-section');
+  const content    = document.getElementById('goal-content');
+
+  if (!targetW || targetW >= w || weeklyDeficit <= 0) {
+    section.style.display = 'none';
+    return;
+  }
+
+  section.style.display = 'block';
+
+  const totalKcal  = (w - targetW) * 7700;           // 需消耗總熱量
+  const weeks      = totalKcal / weeklyDeficit;        // 需要幾週
+  const days       = Math.round(weeks * 7);
+  const months     = (weeks / 4.33).toFixed(1);
+
+  // 預計達標日期
+  const today      = new Date();
+  const targetDate = new Date(today.getTime() + days * 86400000);
+  const fmt        = d => d.toLocaleDateString('zh-TW', { year:'numeric', month:'long', day:'numeric' });
+
+  // 每週減幾kg
+  const kgPerWeek  = (weeklyDeficit / 7700).toFixed(2);
+
+  // 25% / 50% / 75% 里程碑
+  function milestone(pct) {
+    const kg   = +( w - (w - targetW) * pct ).toFixed(1);
+    const d    = new Date(today.getTime() + days * pct * 86400000);
+    return { kg, date: fmt(d), pct: Math.round(pct*100) };
+  }
+  const ms = [milestone(0.25), milestone(0.5), milestone(0.75)];
+
+  // 進度條（目前體重在總減重範圍的位置，起點是0%）
+  const progressPct = 0; // 剛開始
+
+  const isAggressive = (w - targetW) / w > 0.15;
+
+  content.innerHTML = `
+    <div class="forecast-grid">
+      <div class="forecast-item">
+        <div class="f-val" style="color:var(--high)">${(w - targetW).toFixed(1)}</div>
+        <div class="f-lbl">需減去 (kg)</div>
+      </div>
+      <div class="forecast-item">
+        <div class="f-val" style="color:var(--fat)">${Math.round(totalKcal).toLocaleString()}</div>
+        <div class="f-lbl">需消耗 (kcal)</div>
+      </div>
+      <div class="forecast-item">
+        <div class="f-val" style="color:var(--mid)">${Math.round(weeks)}</div>
+        <div class="f-lbl">預計週數</div>
+      </div>
+      <div class="forecast-item">
+        <div class="f-val" style="color:var(--low)">${months}</div>
+        <div class="f-lbl">約幾個月</div>
+      </div>
+    </div>
+
+    <div style="font-size:12px; color:var(--muted); margin-bottom:8px; font-family:'JetBrains Mono',monospace;">
+      週均赤字 ${weeklyDeficit.toLocaleString()} kcal &nbsp;·&nbsp; 每週約減 ${kgPerWeek} kg &nbsp;·&nbsp; 預計達標：<span style="color:var(--text)">${fmt(targetDate)}</span>
+    </div>
+
+    <div class="progress-wrap">
+      <div style="font-size:11px; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-bottom:4px;">減重進度</div>
+      <div class="progress-track">
+        <div class="progress-fill" style="width:1%"></div>
+      </div>
+      <div class="progress-labels">
+        <span>現在 ${w} kg</span>
+        <span>目標 ${targetW} kg</span>
+      </div>
+    </div>
+
+    <div class="milestone-row">
+      ${ms.map((m, i) => `
+      <div class="milestone">
+        <div class="m-dot" style="background:${i===0?'var(--low)':i===1?'var(--mid)':'var(--fat)'}"></div>
+        <span class="m-label">${m.pct}% 達成</span>
+        <span class="m-val">${m.kg} kg</span>
+        <span class="m-date">${m.date}</span>
+      </div>`).join('')}
+    </div>
+
+    ${isAggressive ? `<div class="warn-box">⚠️ 目標減重幅度超過體重 15%，建議分階段執行，每達到一個里程碑後重新測量體脂率並調整計畫。</div>` : ''}
+  `;
+}
+
+// Init
+window.onload = autoCalc;
+</script>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <span class="brand-name">ACEFIT</span><span class="brand-num">1108</span>
+      <span class="footer-slogan">專業減脂 · 碳水循環規劃</span>
+    </div>
+    <div class="footer-cta">
+      <span class="footer-cta-text">想要個人化減脂計畫？</span>
+      <a class="line-btn-footer" href="https://lin.ee/XOFyyQv" target="_blank">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+        加入 LINE@ 諮詢
+      </a>
+    </div>
+    <p class="footer-note">本工具僅供參考，實際成效因個人狀況而異。</p>
+  </div>
+</footer>
+
+</body>
+</html>
