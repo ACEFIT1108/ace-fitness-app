@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>減脂心率區間計算器 | ACE代謝重建教練</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0a; }
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+  input[type=number] { -moz-appearance: textfield; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const ACCENT = "#c8f542";
+const ACCENT2 = "#1C2951";
+
+function HeartRateCalculator() {
+  const [age, setAge] = React.useState("");
+  const [rhr, setRhr] = React.useState("");
+  const [result, setResult] = React.useState(null);
+  const [error, setError] = React.useState(false);
+
+  const presetAges = [20, 25, 30, 35, 40];
+  const presetRhrs = [55, 60, 65, 70, 75];
+
+  function calculate() {
+    const a = parseInt(age);
+    const r = parseInt(rhr);
+    if (!a || !r || a < 15 || a > 80 || r < 40 || r > 100) {
+      setError(true);
+      setResult(null);
+      return;
+    }
+    setError(false);
+    const maxHR = 220 - a;
+    const hrr = maxHR - r;
+    const z1lo = Math.round(hrr * 0.40 + r);
+    const z1hi = Math.round(hrr * 0.50 + r);
+    const z2lo = Math.round(hrr * 0.50 + r);
+    const z2hi = Math.round(hrr * 0.60 + r);
+    const z3lo = Math.round(hrr * 0.60 + r);
+    const z3hi = Math.round(hrr * 0.70 + r);
+
+    let tip = "";
+    if (r < 60) {
+      tip = `你的靜止心率 ${r} bpm 偏低，代表心肺功能不錯 💪 建議以 Zone 2（${z2lo}–${z2hi} bpm）為主要強度，每週3次、每次30–45分鐘。`;
+    } else if (r <= 70) {
+      tip = `靜止心率 ${r} bpm 正常範圍。減脂甜蜜點在 ${z2lo}–${z2hi} bpm，快走、飛輪或橢圓機都適合。`;
+    } else {
+      tip = `靜止心率 ${r} bpm 偏高，先從輕鬆區間 ${z1lo}–${z1hi} bpm 建立基礎，不要急著衝——心率控制才是關鍵。`;
+    }
+
+    setResult({ maxHR, hrr, rhr: r, z1lo, z1hi, z2lo, z2hi, z3lo, z3hi, tip });
+
+    setTimeout(() => {
+      document.getElementById("result-top").scrollIntoView({ behavior: "smooth" });
+    }, 100);
+  }
+
+  const s = {
+    wrap: {
+      background: "#0a0a0a",
+      minHeight: "100vh",
+      fontFamily: "'Noto Sans TC', 'PingFang TC', sans-serif",
+      color: "#f0f0f0",
+      padding: "0 0 60px",
+    },
+    container: { maxWidth: 440, margin: "0 auto", padding: "0 20px" },
+    header: { padding: "36px 0 24px", textAlign: "center" },
+    tag: {
+      display: "inline-block",
+      fontSize: 10,
+      letterSpacing: 3,
+      textTransform: "uppercase",
+      color: ACCENT,
+      border: `1px solid rgba(200,245,66,0.3)`,
+      padding: "3px 10px",
+      borderRadius: 2,
+      marginBottom: 12,
+    },
+    h1: { fontSize: 40, fontWeight: 900, letterSpacing: 2, lineHeight: 1.1, marginBottom: 8 },
+    sub: { fontSize: 13, color: "#777", lineHeight: 1.6 },
+    infoBox: {
+      background: "rgba(28,41,81,0.3)",
+      border: "1px solid rgba(28,41,81,0.8)",
+      borderLeft: `3px solid ${ACCENT}`,
+      borderRadius: 4,
+      padding: "12px 14px",
+      marginBottom: 20,
+      fontSize: 12,
+      color: "#999",
+      lineHeight: 1.7,
+    },
+    card: {
+      background: "#111",
+      border: "1px solid #1e1e1e",
+      borderRadius: 8,
+      padding: "20px",
+      marginBottom: 14,
+    },
+    cardTitle: {
+      fontSize: 10,
+      letterSpacing: 2,
+      textTransform: "uppercase",
+      color: "#555",
+      marginBottom: 16,
+    },
+    label: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "baseline",
+      marginBottom: 8,
+      fontSize: 14,
+      fontWeight: 500,
+    },
+    hint: { fontSize: 11, color: "#555" },
+    inputWrap: { position: "relative", display: "flex", alignItems: "center", marginBottom: 10 },
+    input: {
+      width: "100%",
+      background: "rgba(255,255,255,0.04)",
+      border: "1px solid #1e1e1e",
+      borderRadius: 6,
+      padding: "12px 48px 12px 14px",
+      fontSize: 26,
+      fontWeight: 700,
+      color: "#f0f0f0",
+      outline: "none",
+    },
+    unit: { position: "absolute", right: 12, fontSize: 12, color: "#555", pointerEvents: "none" },
+    presetRow: { display: "flex", gap: 6, marginBottom: 16 },
+    calcBtn: {
+      width: "100%",
+      background: ACCENT,
+      color: "#0a0a0a",
+      border: "none",
+      borderRadius: 6,
+      padding: "14px",
+      fontSize: 15,
+      fontWeight: 700,
+      cursor: "pointer",
+      letterSpacing: 2,
+      fontFamily: "'Noto Sans TC', sans-serif",
+    },
+    mainResult: {
+      background: "#111",
+      border: "1px solid rgba(200,245,66,0.2)",
+      borderRadius: 8,
+      padding: "24px 20px",
+      textAlign: "center",
+      marginBottom: 14,
+      position: "relative",
+      overflow: "hidden",
+    },
+    resultLabel: { fontSize: 10, letterSpacing: 3, textTransform: "uppercase", color: "#555", marginBottom: 10 },
+    resultRange: { fontSize: 58, fontWeight: 900, color: ACCENT, lineHeight: 1, marginBottom: 4 },
+    resultUnit: { fontSize: 12, color: "#555", letterSpacing: 1 },
+    zoneWrap: { marginBottom: 14 },
+    zoneHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 },
+    zoneName: { fontSize: 13 },
+    track: { height: 5, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden", marginBottom: 3 },
+    zoneDesc: { fontSize: 11, color: "#555" },
+    bdRow: (last) => ({
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: "9px 0",
+      borderBottom: last ? "none" : "1px solid #1e1e1e",
+      fontSize: 13,
+    }),
+    bdLabel: { color: "#555" },
+    bdVal: { fontSize: 18, fontWeight: 700 },
+    tipBox: {
+      background: "rgba(200,245,66,0.06)",
+      border: "1px solid rgba(200,245,66,0.15)",
+      borderRadius: 6,
+      padding: 14,
+      marginBottom: 14,
+      fontSize: 13,
+      color: "#ccc",
+      lineHeight: 1.8,
+    },
+    tipTitle: { fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: ACCENT, marginBottom: 6, fontWeight: 500 },
+    cta: {
+      background: `linear-gradient(135deg, ${ACCENT2} 0%, #0d1a3a 100%)`,
+      border: "1px solid rgba(28,41,81,0.8)",
+      borderRadius: 8,
+      padding: "22px 20px",
+      textAlign: "center",
+    },
+    ctaH3: { fontSize: 15, fontWeight: 700, marginBottom: 8 },
+    ctaP: { fontSize: 12, color: "#999", marginBottom: 18, lineHeight: 1.7 },
+    ctaBtn: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 8,
+      background: "#06C755",
+      color: "#fff",
+      border: "none",
+      borderRadius: 6,
+      padding: "12px 24px",
+      fontSize: 14,
+      fontWeight: 700,
+      cursor: "pointer",
+      letterSpacing: 1,
+      textDecoration: "none",
+      fontFamily: "'Noto Sans TC', sans-serif",
+    },
+    footer: { textAlign: "center", fontSize: 11, color: "#333", marginTop: 28, letterSpacing: 1 },
+    error: { color: "#f87171", fontSize: 12, marginBottom: 12 },
+  };
+
+  const presetBtn = (active) => ({
+    flex: 1,
+    background: active ? "rgba(200,245,66,0.1)" : "rgba(255,255,255,0.04)",
+    border: `1px solid ${active ? ACCENT : "#1e1e1e"}`,
+    borderRadius: 4,
+    padding: "7px 2px",
+    fontSize: 12,
+    color: active ? ACCENT : "#666",
+    cursor: "pointer",
+    fontFamily: "'Noto Sans TC', sans-serif",
+  });
+
+  const zones = result ? [
+    { label: "🟢 輕鬆有氧（40–50%）", lo: result.z1lo, hi: result.z1hi, color: "#4ade80", pct: 45, desc: "適合長時間、恢復日，燃脂比例最高" },
+    { label: "🟡 最佳燃脂（50–60%）", lo: result.z2lo, hi: result.z2hi, color: ACCENT, pct: 65, desc: "減脂甜蜜點，可說話但稍喘，最推薦" },
+    { label: "🔴 有氧上限（60–70%）", lo: result.z3lo, hi: result.z3hi, color: "#f97316", pct: 82, desc: "心肺訓練為主，不適合每天做" },
+  ] : [];
+
+  return (
+    <div style={s.wrap}>
+      <div style={s.container}>
+        <div style={s.header}>
+          <div style={s.tag}>ACE 代謝重建教練</div>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>❤️</div>
+          <div style={s.h1}>
+            減脂<span style={{ color: ACCENT }}>心率</span>計算器
+          </div>
+          <p style={s.sub}>找出你的專屬燃脂區間<br />不是累才有效，是對才有效</p>
+        </div>
+
+        <div style={s.infoBox}>
+          💡 <strong style={{ color: ACCENT }}>靜止心率怎麼量？</strong><br />
+          早上剛醒來、還沒下床時測量最準確。智慧手環或手動測脈搏15秒 × 4。
+        </div>
+
+        <div style={s.card}>
+          <div style={s.cardTitle}>輸入你的資料</div>
+
+          <div style={s.label}>
+            <span>年齡</span><span style={s.hint}>歲</span>
+          </div>
+          <div style={s.inputWrap}>
+            <input
+              type="number"
+              value={age}
+              onChange={e => setAge(e.target.value)}
+              placeholder="25"
+              style={s.input}
+            />
+            <span style={s.unit}>歲</span>
+          </div>
+          <div style={s.presetRow}>
+            {presetAges.map(v => (
+              <button key={v} style={presetBtn(parseInt(age) === v)} onClick={() => setAge(String(v))}>
+                {v}歲
+              </button>
+            ))}
+          </div>
+
+          <div style={s.label}>
+            <span>靜止心率</span><span style={s.hint}>bpm</span>
+          </div>
+          <div style={s.inputWrap}>
+            <input
+              type="number"
+              value={rhr}
+              onChange={e => setRhr(e.target.value)}
+              placeholder="65"
+              style={s.input}
+            />
+            <span style={s.unit}>bpm</span>
+          </div>
+          <div style={s.presetRow}>
+            {presetRhrs.map(v => (
+              <button key={v} style={presetBtn(parseInt(rhr) === v)} onClick={() => setRhr(String(v))}>
+                {v}
+              </button>
+            ))}
+          </div>
+
+          {error && <div style={s.error}>請輸入有效的年齡（15–80歲）與靜止心率（40–100 bpm）</div>}
+
+          <button style={s.calcBtn} onClick={calculate}>計算我的心率區間 →</button>
+        </div>
+
+        {result && (
+          <div id="result-top">
+            <div style={s.mainResult}>
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />
+              <div style={s.resultLabel}>你的減脂心率區間</div>
+              <div style={s.resultRange}>{result.z1lo} – {result.z2hi}</div>
+              <div style={s.resultUnit}>次 / 分鐘（bpm）</div>
+            </div>
+
+            <div style={s.card}>
+              <div style={s.cardTitle}>三個有氧強度區間</div>
+              {zones.map((z, i) => (
+                <div key={i} style={s.zoneWrap}>
+                  <div style={s.zoneHeader}>
+                    <span style={s.zoneName}>{z.label}</span>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: z.color }}>{z.lo}–{z.hi} bpm</span>
+                  </div>
+                  <div style={s.track}>
+                    <div style={{ height: "100%", width: `${z.pct}%`, background: z.color, borderRadius: 3 }} />
+                  </div>
+                  <div style={s.zoneDesc}>{z.desc}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={s.card}>
+              <div style={s.cardTitle}>計算過程</div>
+              {[
+                ["最大心率（220 - 年齡）", result.maxHR],
+                ["儲備心率（最大 - 靜止）", result.hrr],
+                ["靜止心率", `${result.rhr} bpm`],
+              ].map(([label, val], i) => (
+                <div key={i} style={s.bdRow(i === 2)}>
+                  <span style={s.bdLabel}>{label}</span>
+                  <span style={s.bdVal}>{val}</span>
+                </div>
+              ))}
+            </div>
+
+            <div style={s.tipBox}>
+              <div style={s.tipTitle}>ACE 教練建議</div>
+              {result.tip}
+            </div>
+
+            <div style={s.cta}>
+              <div style={s.ctaH3}>知道心率，但不知道怎麼執行？</div>
+              <div style={s.ctaP}>一個人訓練容易走偏<br />ACE 8週線上減脂陪跑，把對的方法變成習慣</div>
+              <a href="https://lin.ee/XOFyyQv" style={s.ctaBtn} target="_blank" rel="noreferrer">
+                加 LINE@ 免費諮詢
+              </a>
+            </div>
+          </div>
+        )}
+
+        <div style={s.footer}>@acefit1108 · 代謝重建教練 ACE</div>
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<HeartRateCalculator />);
+</script>
+</body>
+</html>

@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>體態路線診斷｜艾天生健康工作室</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --white: #f5f0eb;
+    --accent: #e8441a;
+    --accent2: #f2a900;
+    --gray: #2a2a2a;
+    --light-gray: #3d3d3d;
+    --text-muted: #888;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'Noto Serif TC', serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  header {
+    padding: 24px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #1f1f1f;
+  }
+  .logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+  .logo span { color: var(--white); }
+
+  /* HERO */
+  .hero {
+    padding: 64px 32px 48px;
+    max-width: 680px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .badge {
+    display: inline-block;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 4px 12px;
+    margin-bottom: 28px;
+    text-transform: uppercase;
+  }
+  h1 {
+    font-size: clamp(32px, 6vw, 56px);
+    font-weight: 900;
+    line-height: 1.1;
+    margin-bottom: 20px;
+    letter-spacing: -0.02em;
+  }
+  h1 em {
+    font-style: normal;
+    color: var(--accent);
+  }
+  .hero-sub {
+    font-size: 15px;
+    color: var(--text-muted);
+    line-height: 1.7;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  /* PROGRESS BAR */
+  .progress-wrap {
+    max-width: 600px;
+    margin: 0 auto 48px;
+    padding: 0 32px;
+  }
+  .progress-meta {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .progress-bar {
+    height: 2px;
+    background: var(--light-gray);
+    position: relative;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+    width: 0%;
+  }
+
+  /* QUIZ CONTAINER */
+  .quiz-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 0 32px 80px;
+  }
+
+  .question-block {
+    display: none;
+    animation: fadeUp 0.4s ease forwards;
+  }
+  .question-block.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .q-number {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    margin-bottom: 16px;
+  }
+  .q-title {
+    font-size: clamp(20px, 4vw, 28px);
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 8px;
+  }
+  .q-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 32px;
+    line-height: 1.6;
+  }
+
+  /* OPTIONS */
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .option-btn {
+    background: var(--gray);
+    border: 1px solid #333;
+    color: var(--white);
+    padding: 18px 24px;
+    text-align: left;
+    cursor: pointer;
+    font-family: 'Noto Serif TC', serif;
+    font-size: 15px;
+    line-height: 1.5;
+    transition: all 0.2s ease;
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .option-btn:hover {
+    border-color: var(--accent);
+    background: #1e1e1e;
+    transform: translateX(4px);
+  }
+  .option-btn.selected {
+    border-color: var(--accent);
+    background: #1e0d08;
+  }
+  .opt-letter {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    min-width: 20px;
+    margin-top: 2px;
+  }
+  .opt-text { flex: 1; }
+  .opt-label { font-weight: 700; display: block; margin-bottom: 2px; }
+  .opt-desc { font-size: 12px; color: var(--text-muted); }
+
+  /* RESULT */
+  #result-section {
+    display: none;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 0 32px 80px;
+    animation: fadeUp 0.5s ease forwards;
+  }
+
+  .result-header {
+    margin-bottom: 40px;
+  }
+  .result-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .result-title {
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+  .result-title .highlight { color: var(--accent); }
+  .result-title .highlight2 { color: var(--accent2); }
+
+  .result-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent);
+    color: var(--white);
+    padding: 6px 16px;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    margin-bottom: 32px;
+  }
+
+  .result-desc {
+    font-size: 15px;
+    line-height: 1.8;
+    color: #ccc;
+    margin-bottom: 32px;
+    padding: 24px;
+    border-left: 3px solid var(--accent);
+    background: #111;
+  }
+
+  .warning-box {
+    background: #1a0e08;
+    border: 1px solid #3d1f0f;
+    padding: 20px 24px;
+    margin-bottom: 32px;
+  }
+  .warning-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+  .warning-text {
+    font-size: 13px;
+    color: #bbb;
+    line-height: 1.7;
+  }
+
+  .key-points {
+    margin-bottom: 40px;
+  }
+  .key-points-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .point-item {
+    display: flex;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid #1f1f1f;
+    align-items: flex-start;
+  }
+  .point-icon {
+    font-size: 18px;
+    min-width: 28px;
+  }
+  .point-text {
+    font-size: 14px;
+    color: #ccc;
+    line-height: 1.6;
+  }
+  .point-text strong { color: var(--white); }
+
+  /* CTA */
+  .cta-block {
+    background: var(--gray);
+    border: 1px solid #444;
+    padding: 32px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-block::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+  .cta-eyebrow {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .cta-headline {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+  .cta-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+    line-height: 1.6;
+  }
+  .cta-btn {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--white);
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    padding: 14px 32px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    text-transform: uppercase;
+  }
+  .cta-btn:hover {
+    background: #ff5522;
+    transform: translateY(-2px);
+  }
+  .cta-note {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 12px;
+  }
+
+  .restart-btn {
+    display: block;
+    margin: 24px auto 0;
+    background: none;
+    border: 1px solid #444;
+    color: var(--text-muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    padding: 10px 20px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+  .restart-btn:hover { border-color: var(--white); color: var(--white); }
+
+  /* Divider */
+  .divider {
+    height: 1px;
+    background: #1f1f1f;
+    margin: 40px 0;
+  }
+
+  @media (max-width: 480px) {
+    header { padding: 16px 20px; }
+    .hero { padding: 40px 20px 32px; }
+    .progress-wrap, .quiz-container, #result-section { padding-left: 20px; padding-right: 20px; }
+    .cta-block { padding: 24px 20px; }
+  }
+</style>
+</head>
+<body>
+
+
+<div class="hero">
+  <div class="badge">免費診斷工具</div>
+  <h1>你現在<br>適合走<em>哪條路？</em></h1>
+  <p class="hero-sub">純減脂、增肌減脂、還是體態重組——方向選錯，再努力都事倍功半。6個問題，找出你的最佳路線。</p>
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-meta">
+    <span id="progress-label">準備開始</span>
+    <span id="progress-pct">0%</span>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-fill" id="progress-fill"></div>
+  </div>
+</div>
+
+<div class="quiz-container" id="quiz-container">
+
+  <!-- Q1: 性別 -->
+  <div class="question-block active" data-q="1">
+    <div class="q-number">01 / 06</div>
+    <div class="q-title">你的性別？</div>
+    <div class="q-sub">體脂標準男女不同，診斷需要這個基準。</div>
+    <div class="options">
+      <button class="option-btn" onclick="selectOption(1,'M')">
+        <span class="opt-letter">A</span>
+        <span class="opt-text"><span class="opt-label">男性</span></span>
+      </button>
+      <button class="option-btn" onclick="selectOption(1,'F')">
+        <span class="opt-letter">B</span>
+        <span class="opt-text"><span class="opt-label">女性</span></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Q2: 體脂 -->
+  <div class="question-block" data-q="2">
+    <div class="q-number">02 / 06</div>
+    <div class="q-title">目前體脂大概在哪個區間？</div>
+    <div class="q-sub">不確定的話，對照體型描述選最接近的。</div>
+    <div class="options" id="bf-options">
+      <!-- Dynamically filled by JS based on gender -->
+    </div>
+  </div>
+
+  <!-- Q3: 訓練年資 -->
+  <div class="question-block" data-q="3">
+    <div class="q-number">03 / 06</div>
+    <div class="q-title">你的重訓年資？</div>
+    <div class="q-sub">有效訓練的時間，不算走走跑跑的期間。</div>
+    <div class="options">
+      <button class="option-btn" onclick="selectOption(3,'beginner')">
+        <span class="opt-letter">A</span>
+        <span class="opt-text">
+          <span class="opt-label">新手 / 0–1 年</span>
+          <span class="opt-desc">剛開始或不到一年的系統訓練</span>
+        </span>
+      </button>
+      <button class="option-btn" onclick="selectOption(3,'intermediate')">
+        <span class="opt-letter">B</span>
+        <span class="opt-text">
+          <span class="opt-label">中級 / 1–3 年</span>
+          <span class="opt-desc">動作模式已建立，有一定肌肉量</span>
+        </span>
+      </button>
+      <button class="option-btn" onclick="selectOption(3,'advanced')">
+        <span class="opt-letter">C</span>
+        <span class="opt-text">
+          <span class="opt-label">進階 / 3 年以上</span>
+          <span class="opt-desc">長期持續訓練，接近自然極限</span>
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Q4: 訓練狀態 -->
+  <div class="question-block" data-q="4">
+    <div class="q-number">04 / 06</div>
+    <div class="q-title">最近半年的訓練狀態？</div>
+    <div class="q-sub">誠實選，這個影響你能走哪條路。</div>
+    <div class="options">
+      <button class="option-btn" onclick="selectOption(4,'consistent')">
+        <span class="opt-letter">A</span>
+        <span class="opt-text">
+          <span class="opt-label">持續規律訓練</span>
+          <span class="opt-desc">每週至少 3 次，中間沒有斷過超過一個月</span>
+        </span>
+      </button>
+      <button class="option-btn" onclick="selectOption(4,'returning')">
+        <span class="opt-letter">B</span>
+        <span class="opt-text">
+          <span class="opt-label">中斷後剛復出</span>
+          <span class="opt-desc">有訓練底子，但中間停了 3 個月以上</span>
+        </span>
+      </button>
+      <button class="option-btn" onclick="selectOption(4,'irregular')">
+        <span class="opt-letter">C</span>
+        <span class="opt-text">
+          <span class="opt-label">斷斷續續</span>
+          <span class="opt-desc">偶爾動，沒有固定計畫</span>
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Q5: 主要目標 -->
+  <div class="question-block" data-q="5">
+    <div class="q-number">05 / 06</div>
+    <div class="q-title">你最主要的目標是？</div>
+    <div class="q-sub">選最接近你心裡想的那個。</div>
+    <div class="options">
+      <button class="option-btn" onclick="selectOption(5,'look')">
+        <span class="opt-letter">A</span>
+        <span class="opt-text">
+          <span class="opt-label">外觀體態</span>
+          <span class="opt-desc">想瘦、想有線條、想看起來不一樣</span>
+        </span>
+      </button>
+      <button class="option-btn" onclick="selectOption(5,'performance')">
+        <span class="opt-letter">B</span>
+        <span class="opt-text">
+          <span class="opt-label">運動表現</span>
+          <span class="opt-desc">想更快、更強、體能更好</span>
+        </span>
+      </button>
+      <button class="option-btn" onclick="selectOption(5,'health')">
+        <span class="opt-letter">C</span>
+        <span class="opt-text">
+          <span class="opt-label">健康與維持</span>
+          <span class="opt-desc">想讓身體更好，不要退步</span>
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Q6: 每週訓練天數 -->
+  <div class="question-block" data-q="6">
+    <div class="q-number">06 / 06</div>
+    <div class="q-title">你每週能投入幾天訓練？</div>
+    <div class="q-sub">實際能做到的，不是你希望的數字。</div>
+    <div class="options">
+      <button class="option-btn" onclick="selectOption(6,'low')">
+        <span class="opt-letter">A</span>
+        <span class="opt-text">
+          <span class="opt-label">1–2 天</span>
+          <span class="opt-desc">時間有限，只能做到這樣</span>
+        </span>
+      </button>
+      <button class="option-btn" onclick="selectOption(6,'mid')">
+        <span class="opt-letter">B</span>
+        <span class="opt-text">
+          <span class="opt-label">3–4 天</span>
+          <span class="opt-desc">主流訓練頻率，可以規劃</span>
+        </span>
+      </button>
+      <button class="option-btn" onclick="selectOption(6,'high')">
+        <span class="opt-letter">C</span>
+        <span class="opt-text">
+          <span class="opt-label">5 天以上</span>
+          <span class="opt-desc">訓練是生活重心之一</span>
+        </span>
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- RESULT SECTION -->
+<div id="result-section">
+  <div class="result-header">
+    <div class="result-label">診斷結果</div>
+    <div class="result-title" id="result-title">—</div>
+    <div class="result-badge" id="result-badge">—</div>
+  </div>
+
+  <div class="result-desc" id="result-desc">—</div>
+
+  <div class="warning-box" id="warning-box">
+    <div class="warning-title">⚠ 如果你走錯路</div>
+    <div class="warning-text" id="warning-text">—</div>
+  </div>
+
+  <div class="key-points">
+    <div class="key-points-title">這條路的執行重點</div>
+    <div id="key-points-list"></div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="cta-block">
+    <div class="cta-eyebrow">下一步</div>
+    <div class="cta-headline">知道路線，還需要執行系統</div>
+    <div class="cta-sub">方向正確只是第一步。熱量怎麼設、訓練怎麼排、卡關了怎麼調——這些才是決定結果的關鍵。</div>
+    <a href="https://lin.ee/XOFyyQv" class="cta-btn" target="_blank">LINE 免費諮詢 →</a>
+    <div class="cta-note">不推銷、不廢話，直接給你具體方向</div>
+  </div>
+
+  <button class="restart-btn" onclick="restart()">← 重新診斷</button>
+</div>
+
+<script>
+  const answers = {};
+  const totalQ = 6;
+
+  const bfOptions = {
+    M: [
+      { val: 'high', label: '偏高', desc: '體脂 20% 以上，肚子明顯，線條不清楚' },
+      { val: 'mid',  label: '中等', desc: '體脂 15–20%，稍微有些贅肉，輪廓還好' },
+      { val: 'low',  label: '偏低', desc: '體脂 15% 以下，線條已可見' },
+    ],
+    F: [
+      { val: 'high', label: '偏高', desc: '體脂 28% 以上，手臂/大腿/腹部肉感明顯' },
+      { val: 'mid',  label: '中等', desc: '體脂 22–28%，身材還好但想更緊實' },
+      { val: 'low',  label: '偏低', desc: '體脂 22% 以下，身形精瘦' },
+    ]
+  };
+
+  function fillBfOptions() {
+    const gender = answers[1] || 'M';
+    const container = document.getElementById('bf-options');
+    const letters = ['A','B','C'];
+    container.innerHTML = bfOptions[gender].map((o, i) => `
+      <button class="option-btn" onclick="selectOption(2,'${o.val}')">
+        <span class="opt-letter">${letters[i]}</span>
+        <span class="opt-text">
+          <span class="opt-label">${o.label}</span>
+          <span class="opt-desc">${o.desc}</span>
+        </span>
+      </button>
+    `).join('');
+  }
+
+  function selectOption(q, val) {
+    answers[q] = val;
+    // Highlight selected
+    const block = document.querySelector(`[data-q="${q}"]`);
+    block.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
+    event.currentTarget.classList.add('selected');
+
+    setTimeout(() => {
+      if (q < totalQ) {
+        goToQ(q + 1);
+      } else {
+        showResult();
+      }
+    }, 320);
+  }
+
+  function goToQ(n) {
+    if (n === 2) fillBfOptions();
+    document.querySelectorAll('.question-block').forEach(b => b.classList.remove('active'));
+    const next = document.querySelector(`[data-q="${n}"]`);
+    if (next) {
+      next.classList.add('active');
+      // re-trigger animation
+      next.style.animation = 'none';
+      requestAnimationFrame(() => { next.style.animation = ''; });
+    }
+    updateProgress(n);
+  }
+
+  function updateProgress(currentQ) {
+    const pct = Math.round(((currentQ - 1) / totalQ) * 100);
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-pct').textContent = pct + '%';
+    document.getElementById('progress-label').textContent = `問題 ${currentQ} / ${totalQ}`;
+  }
+
+  function diagnose() {
+    const { 1: gender, 2: bf, 3: exp, 4: status, 5: goal, 6: freq } = answers;
+
+    // SCORING LOGIC
+    // Recomp conditions: beginner OR returning, bf mid/high, NOT advanced+low
+    // Pure cut: high bf, any exp
+    // Recomp: beginner (any bf), returning (mid/high bf), intermediate+mid+consistent
+    // Cut+muscle: advanced or intermediate+low bf but not ideal for recomp
+
+    let result = '';
+
+    // Rule 1: Very high bf → Pure cut regardless
+    if (bf === 'high' && exp === 'advanced') {
+      result = 'cut';
+    }
+    // Rule 2: Beginner with high/mid bf → Recomp (newbie gains)
+    else if (exp === 'beginner' && (bf === 'high' || bf === 'mid')) {
+      result = 'recomp';
+    }
+    // Rule 3: Returning athlete with high/mid bf → Recomp (muscle memory)
+    else if (status === 'returning' && (bf === 'high' || bf === 'mid')) {
+      result = 'recomp';
+    }
+    // Rule 4: Low bf any exp → lean bulk / recomp borderline
+    else if (bf === 'low') {
+      result = exp === 'advanced' ? 'bulk_cut' : 'recomp';
+    }
+    // Rule 5: Intermediate + consistent + mid bf → recomp possible but hard
+    else if (exp === 'intermediate' && status === 'consistent' && bf === 'mid') {
+      result = 'recomp_hard';
+    }
+    // Rule 6: High bf + any → cut first
+    else if (bf === 'high') {
+      result = 'cut';
+    }
+    // Fallback
+    else {
+      result = 'cut';
+    }
+
+    // Freq override: low freq makes recomp harder
+    if (freq === 'low' && result === 'recomp') result = 'cut';
+
+    return result;
+  }
+
+  const results = {
+    cut: {
+      title: '你現在最適合<br><span class="highlight">先減脂</span>',
+      badge: '📉 純減脂路線',
+      desc: '你目前體脂偏高，或是訓練頻率不足以支撐同步增肌的需求。這個階段最有效的策略是製造足夠的熱量缺口，把體脂先降下來——等體態出現後，肌肉線條自然顯現，也更有動力繼續走下去。',
+      warning: '很多人這個階段急著同步增肌，結果熱量控制失準，減脂進度被拖慢，肌肉也沒長多少。白費時間又消磨動力——這是最常見的錯誤路線。',
+      points: [
+        { icon: '🎯', text: '<strong>熱量缺口 300–500 kcal</strong> 是最安全的減脂速度，不能太激進否則掉肌肉' },
+        { icon: '🥩', text: '<strong>蛋白質維持高攝取</strong>（體重每公斤 1.6g 以上），保住現有肌肉量' },
+        { icon: '🏋️', text: '<strong>重訓依然要做</strong>，目的是給肌肉維持刺激，不是長新肌肉' },
+        { icon: '📊', text: '<strong>每週量一次體重</strong>，降速 0.5–1kg/週 為理想範圍' },
+      ]
+    },
+    recomp: {
+      title: '你有機會做到<br><span class="highlight2">體態重組</span>',
+      badge: '⚡ 增肌減脂同步',
+      desc: '你的條件符合體態重組的適用情境——可能是訓練新手帶著初學者紅利，或是中斷後復出擁有肌肉記憶優勢。在這個狀態下，身體有能力在減少脂肪的同時增加或維持肌肉量，是效率最高的路線。',
+      warning: '體態重組對執行精準度要求很高。熱量吃太少進入純減脂、吃太多變增肌期——窗口很窄。蛋白質不夠、訓練強度不足，兩個條件缺一就失效。自己摸索很容易跑偏。',
+      points: [
+        { icon: '⚡', text: '<strong>熱量接近維持</strong>，小赤字或持平（-200 kcal 以內），不能大幅削減' },
+        { icon: '🥩', text: '<strong>蛋白質要高</strong>，每公斤體重 1.8–2.2g，這是體態重組的核心燃料' },
+        { icon: '💪', text: '<strong>訓練強度不能低</strong>，每週至少 3 次重訓，動作要夠紮實' },
+        { icon: '⏳', text: '<strong>進度比純減脂慢</strong>，但同時改善體脂和肌肉，長期效果更好' },
+      ]
+    },
+    recomp_hard: {
+      title: '體態重組<br><span class="highlight2">可行但有難度</span>',
+      badge: '⚠️ 進階挑戰路線',
+      desc: '你有一定的訓練基礎，體脂也在中等區間，技術上可以嘗試體態重組——但這條路對有訓練經驗的人難度更高，新手紅利已經沒有了。進度會慢，需要非常精準的熱量和訓練管理，稍微偏差就會滑入純增肌或純減脂模式。',
+      warning: '很多中級者以為自己可以輕鬆同步增肌減脂，結果徘徊了好幾個月卻兩頭空。如果你對進度要求比較高，務實來說先走 8–12 週純減脂，再切換到增肌期會更有效率。',
+      points: [
+        { icon: '🧮', text: '<strong>熱量計算要更精準</strong>，建議使用追蹤工具，不要憑感覺' },
+        { icon: '🥩', text: '<strong>蛋白質要非常高</strong>，每公斤 2g 以上，補足訓練刺激的需求' },
+        { icon: '📅', text: '<strong>訓練頻率要夠</strong>，每週 4 次以上才能提供足夠刺激' },
+        { icon: '🔄', text: '<strong>定期評估進度</strong>，6 週沒有明顯變化就要重新判斷路線' },
+      ]
+    },
+    bulk_cut: {
+      title: '建議走<br><span class="highlight">增肌後切脂</span>路線',
+      badge: '🏗️ 階段性計劃',
+      desc: '你體脂已偏低，再大幅減脂空間有限，反而容易影響運動表現和荷爾蒙健康。這個階段比較適合先做一輪增肌期把肌肉量往上拉，再接一個短期切脂把多餘體脂清掉——這是進階訓練者最常走的路線。',
+      warning: '體脂低的人做長期減脂很容易掉肌肉、進入代謝適應，甚至影響睡眠和精神狀態。許多人在這個階段過度控制熱量，反而讓身體組成變差。',
+      points: [
+        { icon: '📈', text: '<strong>增肌期熱量微盈</strong>，+200–300 kcal，避免暴增脂肪' },
+        { icon: '💪', text: '<strong>訓練以漸進超負荷為主</strong>，每週確保強度有所提升' },
+        { icon: '🕐', text: '<strong>增肌期建議 12–16 週</strong>，再評估是否進入切脂階段' },
+        { icon: '📊', text: '<strong>追蹤體重和力量</strong>，增肌期力量提升是進步的主要指標' },
+      ]
+    }
+  };
+
+  function showResult() {
+    const resultKey = diagnose();
+    const r = results[resultKey];
+
+    document.getElementById('result-title').innerHTML = r.title;
+    document.getElementById('result-badge').textContent = r.badge;
+    document.getElementById('result-desc').textContent = r.desc;
+    document.getElementById('warning-text').textContent = r.warning;
+
+    const ptList = document.getElementById('key-points-list');
+    ptList.innerHTML = r.points.map(p => `
+      <div class="point-item">
+        <span class="point-icon">${p.icon}</span>
+        <div class="point-text">${p.text}</div>
+      </div>
+    `).join('');
+
+    document.getElementById('quiz-container').style.display = 'none';
+    document.getElementById('result-section').style.display = 'block';
+    document.getElementById('progress-fill').style.width = '100%';
+    document.getElementById('progress-pct').textContent = '100%';
+    document.getElementById('progress-label').textContent = '診斷完成';
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function restart() {
+    Object.keys(answers).forEach(k => delete answers[k]);
+    document.querySelectorAll('.question-block').forEach(b => b.classList.remove('active'));
+    document.querySelector('[data-q="1"]').classList.add('active');
+    document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('quiz-container').style.display = 'block';
+    document.getElementById('result-section').style.display = 'none';
+    document.getElementById('progress-fill').style.width = '0%';
+    document.getElementById('progress-pct').textContent = '0%';
+    document.getElementById('progress-label').textContent = '準備開始';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // Init
+  updateProgress(1);
+</script>
+</body>
+</html>

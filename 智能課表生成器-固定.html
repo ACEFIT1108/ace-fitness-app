@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACE 智能課表生成器</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0d; --surface: #141414; --surface2: #1a1a1a;
+    --border: #2a2a2a; --accent: #c8f135; --text: #f0f0f0; --muted: #666;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', sans-serif; min-height: 100vh; overflow-x: hidden; }
+
+  .header { padding: 28px 24px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 16px; }
+  .logo-badge { width: 44px; height: 44px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: #000; flex-shrink: 0; }
+  .header-text h1 { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 2px; color: var(--accent); line-height: 1; }
+  .header-text p { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .container { max-width: 860px; margin: 0 auto; padding: 28px 20px 60px; }
+  .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 28px; }
+  .section-label { font-size: 10px; font-weight: 700; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 16px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .field { display: flex; flex-direction: column; gap: 8px; }
+  .field label { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .field select { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'Noto Sans TC', sans-serif; font-size: 14px; padding: 10px 14px; outline: none; transition: border-color 0.2s; width: 100%; appearance: none; }
+  .field select:focus { border-color: var(--accent); }
+  .field select option { background: #1a1a1a; }
+  .select-wrap { position: relative; }
+  .select-wrap::after { content: '▾'; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; font-size: 12px; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { padding: 7px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: 13px; cursor: pointer; transition: all 0.2s; user-select: none; }
+  .chip:hover { border-color: var(--accent); color: var(--text); }
+  .chip.active { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 700; }
+  .divider { height: 1px; background: var(--border); margin: 22px 0; }
+
+  .btn-generate { width: 100%; padding: 16px; background: var(--accent); border: none; border-radius: 12px; color: #000; font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .btn-generate:hover { background: #d4ff40; transform: translateY(-1px); }
+  .btn-generate:active { transform: translateY(0); }
+
+  .output-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; display: none; }
+  .output-card.visible { display: block; }
+  .output-header { padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .output-title { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1px; color: var(--accent); }
+  .btn-copy { padding: 7px 16px; background: transparent; border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: 'Noto Sans TC', sans-serif; }
+  .btn-copy:hover { border-color: var(--accent); color: var(--accent); }
+  .output-body { padding: 24px; font-size: 14px; line-height: 1.8; }
+
+  .loader { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 14px; padding: 40px 0; justify-content: center; }
+  .dots span { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: bounce 1.2s infinite; }
+  .dots span:nth-child(2) { animation-delay: 0.2s; }
+  .dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%,80%,100% { transform:scale(0.6);opacity:0.4; } 40% { transform:scale(1);opacity:1; } }
+
+  .workout-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  .workout-table th { background: #1e1e1e; padding: 10px 14px; text-align: left; font-size: 11px; letter-spacing: 1.5px; color: var(--accent); font-weight: 700; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+  .workout-table td { padding: 10px 14px; border-bottom: 1px solid #1e1e1e; font-size: 13px; vertical-align: top; }
+  .workout-table tr:last-child td { border-bottom: none; }
+  .workout-table tr:hover td { background: #171717; }
+  .workout-table tr.key-move td { color: #FF6B35; font-weight: 700; background: rgba(255,107,53,0.04); }
+  .workout-table tr.key-move td:first-child::before { content: '★ '; }
+
+  .day-header { background: #181818; padding: 12px 16px; margin: 20px 0 10px; border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; font-weight: 700; font-size: 14px; color: var(--text); }
+  .day-header:first-child { margin-top: 0; }
+  .focus-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: rgba(255,107,53,0.15); color: #FF6B35; border: 1px solid rgba(255,107,53,0.35); margin-left: 10px; vertical-align: middle; }
+
+  .note-box { background: #141e08; border: 1px solid #2a3d10; border-radius: 10px; padding: 16px 18px; margin-top: 20px; font-size: 13px; color: #a3d448; line-height: 1.7; }
+  .note-box strong { color: var(--accent); }
+
+  .cta-block { background: linear-gradient(135deg,#141e08 0%,#0f1a06 100%); border: 1px solid #2a3d10; border-radius: 14px; padding: 24px 28px; margin: 0 24px 24px; display: none; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  .cta-text h3 { font-size: 15px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+  .cta-text p { font-size: 12px; color: #7a9a50; line-height: 1.6; }
+  .btn-line { display: inline-flex; align-items: center; gap: 8px; background: var(--accent); color: #000; font-family: 'Noto Sans TC',sans-serif; font-weight: 700; font-size: 13px; padding: 11px 22px; border-radius: 10px; text-decoration: none; white-space: nowrap; transition: all 0.2s; flex-shrink: 0; }
+  .btn-line:hover { background: #d4ff40; transform: translateY(-1px); }
+
+  .brand-footer { text-align: center; padding-top: 20px; padding-bottom: 8px; }
+  .brand-name { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 3px; color: #333; }
+  .brand-tagline { font-size: 11px; color: #2a2a2a; margin-top: 3px; }
+
+  @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } .form-card { padding: 20px; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-badge">ACE</div>
+  <div class="header-text">
+    <h1>智能課表生成器</h1>
+    <p>輸入你的資訊，為你規劃最適合的訓練計畫</p>
+  </div>
+</div>
+
+<div class="container">
+  <div class="form-card">
+    <div class="section-label">基本資料</div>
+    <div class="grid-2" style="margin-bottom:16px">
+      <div class="field">
+        <label>訓練目標</label>
+        <div class="select-wrap">
+          <select id="goal">
+            <option value="fat_loss">🔥 減脂（有氧 + 重訓）</option>
+            <option value="muscle">💪 增肌 / 重訓分化</option>
+            <option value="home">🏠 居家無器材</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>訓練程度</label>
+        <div class="select-wrap">
+          <select id="level">
+            <option value="beginner">初學者（0–6 個月）</option>
+            <option value="intermediate">中階（6 個月–2 年）</option>
+            <option value="advanced">進階（2 年以上）</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <label>每週可訓練天數</label>
+      <div class="chips" id="days-chips">
+        <div class="chip" data-val="3">3 天</div>
+        <div class="chip active" data-val="4">4 天</div>
+        <div class="chip" data-val="5">5 天</div>
+      </div>
+    </div>
+    <div style="margin-top:22px">
+      <button class="btn-generate" onclick="generateWorkout()">⚡ 生成我的課表</button>
+    </div>
+  </div>
+
+  <div class="output-card" id="outputCard">
+    <div class="output-header">
+      <div class="output-title" id="outputTitle">課表生成結果</div>
+      <button class="btn-copy" onclick="copyPlan()">📋 複製課表</button>
+    </div>
+    <div class="output-body" id="outputBody"></div>
+    <div class="cta-block" id="ctaBlock">
+      <div class="cta-text">
+        <h3>想要更完整的支援？</h3>
+        <p>加入 ACE 的 8 週線上陪跑計畫，獲得一對一諮詢、<br>飲食建議與全程客製化支援。</p>
+      </div>
+      <a class="btn-line" href="https://lin.ee/XOFyyQv" target="_blank">💬 LINE@ 找我諮詢</a>
+    </div>
+  </div>
+
+  <div class="brand-footer">
+    <div class="brand-name">ACEFIT1108</div>
+    <div class="brand-tagline">你的 AI 智能訓練・健康管理教練</div>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('#days-chips .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('#days-chips .chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+  });
+});
+function getDay() {
+  const a = document.querySelector('#days-chips .chip.active');
+  return a ? a.dataset.val : '4';
+}
+
+// ── PLANS ────────────────────────────────────────────────────────────────────
+const PLANS = {
+  fat_loss_beginner_3: {
+    title: '減脂訓練計畫 — 初學者｜每週 3 天',
+    note: '每次訓練前熱身 5 分鐘、訓練後拉伸 5 分鐘。有氧建議在重訓後做，燃脂效果更好。飲食控制才是減脂關鍵，訓練只占 30%。',
+    days: [
+      { title: '全身 A', focus: '下肢', moves: [
+        {key:true, name:'深蹲', sets:'4×10', tip:'膝蓋對齊腳尖，背部打直'},
+        {key:false,name:'啞鈴羅馬尼亞硬舉',sets:'3×12',tip:'感受大腿後側延伸'},
+        {key:false,name:'伏地挺身',sets:'3×10',tip:'核心收緊，身體呈一直線'},
+        {key:false,name:'坐姿划船',sets:'3×12',tip:'肩胛夾緊，不借腰力'},
+        {key:false,name:'棒式撐體',sets:'3×30秒',tip:'腹部收緊，不塌腰'},
+        {key:false,name:'跑步機快走',sets:'20分鐘',tip:'心率維持 130–150'},
+      ]},
+      { title: '全身 B', focus: '上肢推', moves: [
+        {key:true, name:'啞鈴臥推',sets:'4×10',tip:'手肘 45 度，感受胸部發力'},
+        {key:false,name:'啞鈴肩推',sets:'3×12',tip:'核心收緊，不過度挺腰'},
+        {key:false,name:'滑輪下拉',sets:'3×12',tip:'肘往下壓，背闊肌用力'},
+        {key:false,name:'啞鈴二頭彎舉',sets:'3×12',tip:'上臂固定，慢速下放'},
+        {key:false,name:'反向捲腹',sets:'3×15',tip:'下背不離地，控制速度'},
+        {key:false,name:'飛輪',sets:'20分鐘',tip:'中等強度穩定心率'},
+      ]},
+      { title: '全身 C', focus: '下肢＋核心', moves: [
+        {key:true, name:'腿推機',sets:'4×12',tip:'腳踩高位，膝蓋不鎖死'},
+        {key:false,name:'啞鈴弓步蹲',sets:'3×10/側',tip:'前腳膝蓋不超過腳尖'},
+        {key:false,name:'啞鈴單臂划船',sets:'3×12/側',tip:'背部平行地面，不旋轉'},
+        {key:false,name:'滑輪三頭下壓',sets:'3×12',tip:'手肘固定，完全伸展'},
+        {key:false,name:'捲腹',sets:'3×15',tip:'下巴離胸，感受腹部收縮'},
+        {key:false,name:'橢圓機',sets:'20分鐘',tip:'全程保持節奏'},
+      ]},
+    ]
+  },
+  fat_loss_beginner_4: {
+    title: '減脂訓練計畫 — 初學者｜每週 4 天',
+    note: '4 天建議安排週一二四五，中間穿插休息。初學者前兩週先熟悉動作，不要急著加重量。',
+    days: [
+      { title: 'Day 1 上肢推', focus: '胸部', moves: [
+        {key:true, name:'啞鈴臥推',sets:'4×10',tip:'手肘 45 度，感受胸部發力'},
+        {key:false,name:'上斜啞鈴臥推',sets:'3×12',tip:'強調上胸，不聳肩'},
+        {key:false,name:'啞鈴肩推',sets:'3×12',tip:'核心收緊，不過度挺腰'},
+        {key:false,name:'側平舉',sets:'3×12',tip:'手肘微彎，不借力甩'},
+        {key:false,name:'三頭下壓',sets:'3×12',tip:'手肘固定身側'},
+        {key:false,name:'跑步機快走',sets:'20分鐘',tip:'坡度 3–5%，心率 130–145'},
+      ]},
+      { title: 'Day 2 下肢', focus: '股四頭', moves: [
+        {key:true, name:'深蹲',sets:'4×10',tip:'蹲到大腿平行地面'},
+        {key:false,name:'腿推機',sets:'3×12',tip:'腳踩中高位，感受臀腿'},
+        {key:false,name:'腿伸展機',sets:'3×12',tip:'頂點停留 1 秒'},
+        {key:false,name:'腿彎舉',sets:'3×12',tip:'感受大腿後側收縮'},
+        {key:false,name:'站姿提踵',sets:'3×15',tip:'頂點停留，完整動作幅度'},
+        {key:false,name:'棒式',sets:'3×40秒',tip:'全程收腹'},
+      ]},
+      { title: 'Day 3 上肢拉', focus: '背部', moves: [
+        {key:true, name:'滑輪下拉',sets:'4×10',tip:'胸口挺起，肘往腰拉'},
+        {key:false,name:'坐姿划船',sets:'3×12',tip:'肩胛夾緊後停 1 秒'},
+        {key:false,name:'啞鈴單臂划船',sets:'3×12/側',tip:'背部平行地面'},
+        {key:false,name:'滑輪面拉',sets:'3×15',tip:'強化後肩，預防受傷'},
+        {key:false,name:'二頭彎舉',sets:'3×12',tip:'上臂固定，慢速離心'},
+        {key:false,name:'飛輪',sets:'20分鐘',tip:'中強度穩定踩踏'},
+      ]},
+      { title: 'Day 4 下肢＋核心', focus: '臀部', moves: [
+        {key:true, name:'臀推',sets:'4×12',tip:'頂點夾臀停 1 秒'},
+        {key:false,name:'啞鈴弓步蹲',sets:'3×10/側',tip:'上身直立，步伐夠大'},
+        {key:false,name:'臀橋',sets:'3×15',tip:'單腿進階可增加難度'},
+        {key:false,name:'反向捲腹',sets:'3×15',tip:'下背不離地'},
+        {key:false,name:'捲腹',sets:'3×15',tip:'感受腹部收縮'},
+        {key:false,name:'橢圓機',sets:'20分鐘',tip:'全程維持節奏'},
+      ]},
+    ]
+  },
+  fat_loss_intermediate_4: {
+    title: '減脂訓練計畫 — 中階｜每週 4 天',
+    note: '中階學員有氧建議改成間歇訓練，燃脂效率更高。每 4 週做一次退負荷週，重量降 20%。熱量赤字控制在 300–500 大卡最理想。',
+    days: [
+      { title: 'Day 1 上肢推', focus: '胸部', moves: [
+        {key:true, name:'槓鈴臥推',sets:'4×10',tip:'離心 3 秒，感受胸部張力'},
+        {key:false,name:'上斜槓鈴臥推',sets:'3×10',tip:'強調上胸，不聳肩'},
+        {key:false,name:'滑輪夾胸',sets:'3×12',tip:'頂點停 1 秒擠壓胸部'},
+        {key:false,name:'啞鈴肩推',sets:'3×10',tip:'核心收緊，不過度挺腰'},
+        {key:false,name:'三頭下壓',sets:'3×12',tip:'手肘固定，完全伸展'},
+        {key:false,name:'跑步機',sets:'20分鐘',tip:'坡度 5%，心率 140–155'},
+      ]},
+      { title: 'Day 2 下肢', focus: '股四頭＋臀', moves: [
+        {key:true, name:'槓鈴深蹲',sets:'4×10',tip:'蹲到底，控制節奏'},
+        {key:false,name:'臀推',sets:'4×12',tip:'頂點夾臀停 1 秒'},
+        {key:false,name:'腿伸展機',sets:'3×12',tip:'頂點停留感受股四頭'},
+        {key:false,name:'腿彎舉',sets:'3×12',tip:'離心 4 秒'},
+        {key:false,name:'弓步蹲行走',sets:'3×12/側',tip:'上身直立，步伐夠大'},
+        {key:false,name:'棒式＋側棒式',sets:'3×45秒',tip:'核心全程收緊'},
+      ]},
+      { title: 'Day 3 上肢拉', focus: '背部', moves: [
+        {key:true, name:'槓鈴划船',sets:'4×10',tip:'背部平行地面，肘貼身'},
+        {key:false,name:'滑輪下拉',sets:'3×10',tip:'胸口挺起帶動背闊肌'},
+        {key:false,name:'坐姿划船',sets:'3×12',tip:'肩胛夾緊後停 1 秒'},
+        {key:false,name:'滑輪面拉',sets:'3×15',tip:'強化後肩旋轉肌群'},
+        {key:false,name:'二頭彎舉',sets:'3×12',tip:'離心慢速 4 秒'},
+        {key:false,name:'飛輪間歇',sets:'20分鐘',tip:'30 秒快＋90 秒慢循環'},
+      ]},
+      { title: 'Day 4 下肢＋核心', focus: '臀腿後側', moves: [
+        {key:true, name:'羅馬尼亞硬舉',sets:'4×10',tip:'感受大腿後側張力'},
+        {key:false,name:'單腿臀推',sets:'3×10/側',tip:'穩定骨盆，不歪斜'},
+        {key:false,name:'腿彎舉',sets:'3×12',tip:'慢速離心強化後側'},
+        {key:false,name:'側蹲',sets:'3×10/側',tip:'強化內收肌群'},
+        {key:false,name:'反向捲腹',sets:'3×15',tip:'下背不離地'},
+        {key:false,name:'橢圓機',sets:'20分鐘',tip:'中高強度穩定輸出'},
+      ]},
+    ]
+  },
+  fat_loss_intermediate_5: {
+    title: '減脂訓練計畫 — 中階｜每週 5 天',
+    note: '5 天訓練建議週一到週五，週末完全休息。有氧日和重訓日交替可幫助恢復。熱量赤字控制在 300–500 大卡最理想。',
+    days: [
+      { title: 'Day 1 推', focus: '胸部', moves: [
+        {key:true, name:'槓鈴臥推',sets:'4×8',tip:'離心 3 秒，爆發推起'},
+        {key:false,name:'上斜啞鈴臥推',sets:'3×10',tip:'強調上胸線條'},
+        {key:false,name:'滑輪夾胸',sets:'3×12',tip:'感受胸部完整收縮'},
+        {key:false,name:'啞鈴肩推',sets:'3×10',tip:'核心收緊'},
+        {key:false,name:'側平舉',sets:'3×12',tip:'不借力'},
+        {key:false,name:'三頭下壓',sets:'3×12',tip:'手肘固定'},
+      ]},
+      { title: 'Day 2 拉', focus: '背部', moves: [
+        {key:true, name:'槓鈴划船',sets:'4×8',tip:'背平行地面，核心收緊'},
+        {key:false,name:'滑輪下拉',sets:'3×10',tip:'胸口挺起'},
+        {key:false,name:'單臂啞鈴划船',sets:'3×10/側',tip:'背部不旋轉'},
+        {key:false,name:'滑輪面拉',sets:'3×15',tip:'強化後肩'},
+        {key:false,name:'二頭彎舉',sets:'4×10',tip:'離心慢速'},
+      ]},
+      { title: 'Day 3 腿', focus: '股四頭＋臀', moves: [
+        {key:true, name:'槓鈴深蹲',sets:'4×8',tip:'全深蹲，控制節奏'},
+        {key:false,name:'臀推',sets:'4×12',tip:'頂點夾臀'},
+        {key:false,name:'腿伸展機',sets:'3×12',tip:'頂點停留'},
+        {key:false,name:'腿彎舉',sets:'3×12',tip:'離心 4 秒'},
+        {key:false,name:'站姿提踵',sets:'4×15',tip:'完整幅度'},
+      ]},
+      { title: 'Day 4 有氧＋核心', focus: '燃脂', moves: [
+        {key:true, name:'跑步機間歇',sets:'20分鐘',tip:'1 分快＋2 分慢循環'},
+        {key:false,name:'棒式',sets:'3×60秒',tip:'核心全程收緊'},
+        {key:false,name:'側棒式',sets:'3×45秒/側',tip:'腰方肌強化'},
+        {key:false,name:'反向捲腹',sets:'3×15',tip:'下背不離地'},
+        {key:false,name:'捲腹',sets:'3×15',tip:'感受腹部收縮'},
+        {key:false,name:'登山者式',sets:'3×20/側',tip:'維持棒式姿勢'},
+      ]},
+      { title: 'Day 5 肩＋手臂', focus: '肩部', moves: [
+        {key:true, name:'啞鈴肩推',sets:'4×10',tip:'不挺腰，核心收緊'},
+        {key:false,name:'側平舉',sets:'4×12',tip:'慢速離心'},
+        {key:false,name:'前平舉',sets:'3×12',tip:'頂點停 1 秒'},
+        {key:false,name:'二頭彎舉',sets:'3×12',tip:'上臂固定'},
+        {key:false,name:'三頭過頭伸展',sets:'3×12',tip:'手肘夾緊'},
+        {key:false,name:'飛輪間歇',sets:'15分鐘',tip:'30 秒全力＋60 秒休息'},
+      ]},
+    ]
+  },
+  muscle_beginner_3: {
+    title: '增肌訓練計畫 — 初學者｜每週 3 天',
+    note: '增肌關鍵在漸進式超負荷，每週嘗試多加重量或多做一兩下。蛋白質目標每公斤體重 1.6–2 克，睡眠充足才能長肌肉。',
+    days: [
+      { title: '全身 A', focus: '胸＋三頭', moves: [
+        {key:true, name:'槓鈴臥推',sets:'4×8',tip:'肩胛夾緊貼椅，控制下放'},
+        {key:false,name:'上斜啞鈴臥推',sets:'3×10',tip:'強調上胸線條'},
+        {key:false,name:'滑輪下拉',sets:'4×10',tip:'胸口挺起帶動背闊肌'},
+        {key:false,name:'坐姿划船',sets:'3×10',tip:'肩胛夾緊後停 1 秒'},
+        {key:false,name:'三頭繩索下壓',sets:'3×12',tip:'手肘完全伸展'},
+        {key:false,name:'棒式',sets:'3×40秒',tip:'核心全程收緊'},
+      ]},
+      { title: '全身 B', focus: '腿部', moves: [
+        {key:true, name:'槓鈴深蹲',sets:'4×8',tip:'蹲到大腿平行，背部中立'},
+        {key:false,name:'腿推機',sets:'3×10',tip:'腳踩高位強調臀腿'},
+        {key:false,name:'羅馬尼亞硬舉',sets:'3×10',tip:'感受大腿後側張力'},
+        {key:false,name:'腿彎舉',sets:'3×12',tip:'慢速離心 4 秒'},
+        {key:false,name:'站姿提踵',sets:'4×15',tip:'完整動作幅度'},
+        {key:false,name:'懸吊抬腿',sets:'3×12',tip:'核心控制，不甩腿'},
+      ]},
+      { title: '全身 C', focus: '肩＋手臂', moves: [
+        {key:true, name:'啞鈴肩推',sets:'4×10',tip:'核心收緊，不過度挺腰'},
+        {key:false,name:'啞鈴側平舉',sets:'3×12',tip:'手肘微彎，不借力'},
+        {key:false,name:'啞鈴前平舉',sets:'3×12',tip:'慢速上舉，頂點停 1 秒'},
+        {key:false,name:'二頭彎舉',sets:'3×12',tip:'上臂固定，慢速下放'},
+        {key:false,name:'錘式彎舉',sets:'3×12',tip:'強調肱肌和前臂'},
+        {key:false,name:'三頭過頭伸展',sets:'3×12',tip:'手肘夾緊，完整伸展'},
+      ]},
+    ]
+  },
+  muscle_beginner_4: {
+    title: '增肌訓練計畫 — 初學者｜每週 4 天',
+    note: '推拉腿是增肌最經典的分化方式，確保每個肌群都有足夠恢復時間。初學者前 4 週先把動作做標準，比追求重量更重要。',
+    days: [
+      { title: 'Day 1 推', focus: '胸部', moves: [
+        {key:true, name:'槓鈴臥推',sets:'4×8',tip:'手肘 45 度，肩胛夾緊'},
+        {key:false,name:'上斜啞鈴臥推',sets:'3×10',tip:'強調上胸，感受延伸'},
+        {key:false,name:'蝴蝶機夾胸',sets:'3×12',tip:'頂點停 1 秒擠壓胸部'},
+        {key:false,name:'啞鈴肩推',sets:'3×10',tip:'核心收緊'},
+        {key:false,name:'側平舉',sets:'3×12',tip:'不借力，慢速控制'},
+        {key:false,name:'三頭下壓',sets:'3×12',tip:'手肘固定，完全伸展'},
+      ]},
+      { title: 'Day 2 拉', focus: '背部', moves: [
+        {key:true, name:'滑輪下拉',sets:'4×8',tip:'胸口挺起，肘往腰方向拉'},
+        {key:false,name:'坐姿划船',sets:'4×10',tip:'肩胛夾緊後停 1 秒'},
+        {key:false,name:'啞鈴單臂划船',sets:'3×10/側',tip:'背部平行地面'},
+        {key:false,name:'滑輪面拉',sets:'3×15',tip:'強化後肩旋轉肌群'},
+        {key:false,name:'二頭彎舉',sets:'3×12',tip:'上臂固定，離心 4 秒'},
+        {key:false,name:'錘式彎舉',sets:'3×12',tip:'感受肱肌發力'},
+      ]},
+      { title: 'Day 3 腿', focus: '股四頭', moves: [
+        {key:true, name:'槓鈴深蹲',sets:'4×8',tip:'蹲到大腿平行，核心收緊'},
+        {key:false,name:'腿推機',sets:'3×10',tip:'腳踩中位，膝蓋不鎖死'},
+        {key:false,name:'腿伸展機',sets:'3×12',tip:'頂點停 1 秒'},
+        {key:false,name:'腿彎舉',sets:'3×12',tip:'慢速離心'},
+        {key:false,name:'站姿提踵',sets:'4×15',tip:'完整動作幅度'},
+        {key:false,name:'棒式',sets:'3×45秒',tip:'核心全程收緊'},
+      ]},
+      { title: 'Day 4 肩＋手臂', focus: '肩部', moves: [
+        {key:true, name:'啞鈴肩推',sets:'4×10',tip:'不過度挺腰，核心收緊'},
+        {key:false,name:'側平舉',sets:'4×12',tip:'手肘微彎，不借力甩'},
+        {key:false,name:'前平舉',sets:'3×12',tip:'慢速控制'},
+        {key:false,name:'二頭彎舉',sets:'3×12',tip:'上臂固定'},
+        {key:false,name:'三頭下壓',sets:'3×12',tip:'手肘固定身側'},
+        {key:false,name:'反向捲腹＋捲腹',sets:'3×15',tip:'上下腹輪流刺激'},
+      ]},
+    ]
+  },
+  muscle_intermediate_4: {
+    title: '增肌訓練計畫 — 中階｜每週 4 天',
+    note: '中階增肌建議採用漸進式超負荷，每週至少在一個動作上增加重量或組數。硬舉和深蹲是增肌效率最高的動作，不要跳過。',
+    days: [
+      { title: 'Day 1 推', focus: '胸部', moves: [
+        {key:true, name:'槓鈴臥推',sets:'5×5',tip:'大重量，組間休息 2 分鐘'},
+        {key:false,name:'上斜槓鈴臥推',sets:'4×8',tip:'強調上胸厚度'},
+        {key:false,name:'滑輪夾胸',sets:'3×12',tip:'頂點擠壓停 1 秒'},
+        {key:false,name:'啞鈴肩推',sets:'4×10',tip:'核心收緊'},
+        {key:false,name:'側平舉',sets:'4×12',tip:'慢速離心 3 秒'},
+        {key:false,name:'三頭下壓＋過頭',sets:'3×12',tip:'超級組，節省時間'},
+      ]},
+      { title: 'Day 2 拉', focus: '背部', moves: [
+        {key:true, name:'槓鈴硬舉',sets:'4×6',tip:'背部中立，臀部發力推地'},
+        {key:false,name:'槓鈴划船',sets:'4×8',tip:'肘貼身，背平行地面'},
+        {key:false,name:'滑輪下拉',sets:'3×10',tip:'胸口挺起'},
+        {key:false,name:'單臂啞鈴划船',sets:'3×10/側',tip:'全幅度動作'},
+        {key:false,name:'二頭彎舉',sets:'4×10',tip:'離心慢速 4 秒'},
+        {key:false,name:'錘式彎舉',sets:'3×12',tip:'感受肱肌'},
+      ]},
+      { title: 'Day 3 腿', focus: '股四頭', moves: [
+        {key:true, name:'槓鈴深蹲',sets:'5×5',tip:'大重量全深蹲'},
+        {key:false,name:'腿推機',sets:'4×10',tip:'腳踩低位強調股四頭'},
+        {key:false,name:'腿伸展機',sets:'3×12',tip:'頂點停留 2 秒'},
+        {key:false,name:'腿彎舉',sets:'4×10',tip:'離心 4 秒'},
+        {key:false,name:'臀推',sets:'3×12',tip:'頂點夾臀'},
+        {key:false,name:'站姿提踵',sets:'5×15',tip:'完整動作幅度'},
+      ]},
+      { title: 'Day 4 肩＋手臂', focus: '肩部', moves: [
+        {key:true, name:'槓鈴肩推',sets:'4×8',tip:'站姿，核心收緊'},
+        {key:false,name:'啞鈴側平舉',sets:'4×12',tip:'慢速離心 3 秒'},
+        {key:false,name:'啞鈴前平舉',sets:'3×12',tip:'頂點停 1 秒'},
+        {key:false,name:'反向飛鳥',sets:'3×15',tip:'強化後肩'},
+        {key:false,name:'二頭彎舉',sets:'4×10',tip:'上臂固定'},
+        {key:false,name:'三頭下壓',sets:'4×12',tip:'手肘固定身側'},
+      ]},
+    ]
+  },
+  muscle_intermediate_5: {
+    title: '增肌訓練計畫 — 中階｜每週 5 天',
+    note: '5 天分化需要充足睡眠和飲食支撐，蛋白質每公斤體重至少 2 克。手臂日放在最後，避免影響大肌群訓練表現。',
+    days: [
+      { title: 'Day 1 推', focus: '胸部', moves: [
+        {key:true, name:'槓鈴臥推',sets:'5×5',tip:'大重量主升'},
+        {key:false,name:'上斜槓鈴臥推',sets:'4×8',tip:'上胸厚度'},
+        {key:false,name:'下斜啞鈴臥推',sets:'3×10',tip:'強調下胸線條'},
+        {key:false,name:'啞鈴肩推',sets:'4×10',tip:'核心收緊'},
+        {key:false,name:'側平舉',sets:'4×12',tip:'慢速離心'},
+        {key:false,name:'三頭下壓',sets:'4×12',tip:'手肘固定'},
+      ]},
+      { title: 'Day 2 拉', focus: '背部', moves: [
+        {key:true, name:'槓鈴硬舉',sets:'4×6',tip:'背部中立，臀部主導'},
+        {key:false,name:'槓鈴划船',sets:'4×8',tip:'肘貼身'},
+        {key:false,name:'滑輪下拉',sets:'4×10',tip:'胸口挺起'},
+        {key:false,name:'單臂啞鈴划船',sets:'3×10/側',tip:'全幅度'},
+        {key:false,name:'二頭彎舉',sets:'4×10',tip:'離心慢速'},
+        {key:false,name:'錘式彎舉',sets:'3×12',tip:'肱肌發力'},
+      ]},
+      { title: 'Day 3 腿', focus: '股四頭＋臀', moves: [
+        {key:true, name:'槓鈴深蹲',sets:'5×5',tip:'全深蹲大重量'},
+        {key:false,name:'腿推機',sets:'4×10',tip:'強調股四頭'},
+        {key:false,name:'羅馬尼亞硬舉',sets:'4×10',tip:'大腿後側張力'},
+        {key:false,name:'腿伸展機',sets:'3×12',tip:'頂點停留'},
+        {key:false,name:'腿彎舉',sets:'3×12',tip:'離心 4 秒'},
+        {key:false,name:'站姿提踵',sets:'5×15',tip:'完整幅度'},
+      ]},
+      { title: 'Day 4 肩', focus: '三角肌', moves: [
+        {key:true, name:'槓鈴肩推',sets:'5×5',tip:'站姿大重量'},
+        {key:false,name:'啞鈴側平舉',sets:'5×12',tip:'慢速離心 3 秒'},
+        {key:false,name:'啞鈴前平舉',sets:'4×12',tip:'頂點停 1 秒'},
+        {key:false,name:'反向飛鳥',sets:'4×15',tip:'後肩強化'},
+        {key:false,name:'面拉',sets:'3×15',tip:'旋轉肌群保護'},
+        {key:false,name:'聳肩',sets:'4×12',tip:'頂點停 1 秒'},
+      ]},
+      { title: 'Day 5 手臂', focus: '二頭＋三頭', moves: [
+        {key:true, name:'槓鈴彎舉',sets:'4×10',tip:'上臂固定，不借腰'},
+        {key:false,name:'上斜啞鈴彎舉',sets:'3×12',tip:'強調二頭長頭'},
+        {key:false,name:'錘式彎舉',sets:'3×12',tip:'肱肌＋前臂'},
+        {key:false,name:'滑輪三頭下壓',sets:'4×12',tip:'手肘固定'},
+        {key:false,name:'三頭過頭伸展',sets:'3×12',tip:'長頭完整伸展'},
+        {key:false,name:'反握下壓',sets:'3×12',tip:'強調外側三頭'},
+      ]},
+    ]
+  },
+  muscle_advanced_5: {
+    title: '增肌訓練計畫 — 進階｜每週 5 天',
+    note: '進階訓練者需要更精細的週期化安排，建議每 8 週做一次減量週。訓練日誌很重要，記錄每次的重量和次數才能確保持續進步。',
+    days: [
+      { title: 'Day 1 推 A', focus: '胸部力量', moves: [
+        {key:true, name:'槓鈴臥推',sets:'5×3',tip:'90% 強度，組間休息 3 分鐘'},
+        {key:false,name:'上斜槓鈴臥推',sets:'4×6',tip:'重量主升'},
+        {key:false,name:'啞鈴飛鳥',sets:'3×12',tip:'完整幅度，感受延伸'},
+        {key:false,name:'槓鈴肩推',sets:'4×8',tip:'站姿爆發推起'},
+        {key:false,name:'側平舉',sets:'4×15',tip:'離心 3 秒'},
+        {key:false,name:'三頭雙槓撐體',sets:'4×10',tip:'加重版'},
+      ]},
+      { title: 'Day 2 拉 A', focus: '背部力量', moves: [
+        {key:true, name:'槓鈴硬舉',sets:'5×3',tip:'最大力量，組間 3 分鐘'},
+        {key:false,name:'槓鈴划船',sets:'4×6',tip:'重量優先'},
+        {key:false,name:'引體向上',sets:'4×8',tip:'加重版，全幅度'},
+        {key:false,name:'單臂啞鈴划船',sets:'3×10/側',tip:'重量到位'},
+        {key:false,name:'二頭槓鈴彎舉',sets:'4×8',tip:'離心慢速'},
+        {key:false,name:'滑輪面拉',sets:'3×15',tip:'後肩強化'},
+      ]},
+      { title: 'Day 3 腿 A', focus: '深蹲力量', moves: [
+        {key:true, name:'槓鈴深蹲',sets:'5×3',tip:'最大力量，組間 3 分鐘'},
+        {key:false,name:'前蹲舉',sets:'3×6',tip:'上身直立，核心強化'},
+        {key:false,name:'腿推機',sets:'4×10',tip:'大重量輔助'},
+        {key:false,name:'羅馬尼亞硬舉',sets:'4×8',tip:'大腿後側張力'},
+        {key:false,name:'腿彎舉',sets:'3×12',tip:'離心 4 秒'},
+        {key:false,name:'站姿提踵',sets:'5×12',tip:'加重版'},
+      ]},
+      { title: 'Day 4 推 B', focus: '胸部肌肥大', moves: [
+        {key:true, name:'上斜槓鈴臥推',sets:'4×8',tip:'強調上胸厚度'},
+        {key:false,name:'啞鈴臥推',sets:'4×10',tip:'更大動作幅度'},
+        {key:false,name:'滑輪夾胸',sets:'4×12',tip:'頂點擠壓停 2 秒'},
+        {key:false,name:'啞鈴側平舉',sets:'5×15',tip:'代謝訓練'},
+        {key:false,name:'三頭下壓',sets:'4×12',tip:'手肘固定'},
+        {key:false,name:'三頭過頭伸展',sets:'3×12',tip:'長頭完整伸展'},
+      ]},
+      { title: 'Day 5 拉 B＋腿 B', focus: '背＋臀腿後側', moves: [
+        {key:true, name:'引體向上',sets:'4×8',tip:'加重，全幅度'},
+        {key:false,name:'滑輪下拉',sets:'3×12',tip:'不同握距刺激'},
+        {key:false,name:'坐姿划船',sets:'4×10',tip:'肩胛夾緊'},
+        {key:false,name:'臀推',sets:'4×12',tip:'加重，頂點夾臀'},
+        {key:false,name:'腿彎舉',sets:'4×10',tip:'離心 4 秒'},
+        {key:false,name:'二頭＋錘式超組',sets:'3×10',tip:'超級組'},
+      ]},
+    ]
+  },
+  home_beginner_3: {
+    title: '居家訓練計畫 — 初學者｜每週 3 天',
+    note: '居家訓練重點在動作品質，不在次數多寡。伏地挺身做不標準就先做跪姿版，動作對了再進階。每次訓練前做 5 分鐘動態熱身。',
+    days: [
+      { title: '全身 A', focus: '推＋核心', moves: [
+        {key:true, name:'伏地挺身',sets:'4×10',tip:'核心收緊，身體一直線'},
+        {key:false,name:'跪姿伏地挺身',sets:'3×12',tip:'初學者退階版'},
+        {key:false,name:'深蹲',sets:'4×15',tip:'膝蓋對齊腳尖'},
+        {key:false,name:'反向捲腹',sets:'3×15',tip:'下背不離地'},
+        {key:false,name:'棒式',sets:'3×30秒',tip:'腹部收緊'},
+        {key:false,name:'開合跳',sets:'3×30秒',tip:'有氧熱身收尾'},
+      ]},
+      { title: '全身 B', focus: '下肢', moves: [
+        {key:true, name:'徒手弓步蹲',sets:'4×10/側',tip:'上身直立，步伐夠大'},
+        {key:false,name:'臀橋',sets:'4×15',tip:'頂點夾臀停 1 秒'},
+        {key:false,name:'深蹲跳',sets:'3×10',tip:'輕落地，膝蓋微彎'},
+        {key:false,name:'側棒式',sets:'3×30秒/側',tip:'腰方肌強化'},
+        {key:false,name:'登山者式',sets:'3×20/側',tip:'維持棒式姿勢'},
+        {key:false,name:'高抬腿跑',sets:'3×30秒',tip:'核心收緊'},
+      ]},
+      { title: '全身 C', focus: '上肢＋核心', moves: [
+        {key:true, name:'寬距伏地挺身',sets:'4×10',tip:'強調胸部'},
+        {key:false,name:'窄距伏地挺身',sets:'3×10',tip:'強調三頭'},
+        {key:false,name:'超人式',sets:'3×12',tip:'強化下背'},
+        {key:false,name:'捲腹',sets:'3×15',tip:'感受腹部收縮'},
+        {key:false,name:'單腿臀橋',sets:'3×10/側',tip:'穩定骨盆'},
+        {key:false,name:'波比跳',sets:'3×8',tip:'全身燃脂'},
+      ]},
+    ]
+  },
+  home_beginner_4: {
+    title: '居家訓練計畫 — 初學者｜每週 4 天',
+    note: '居家 4 天建議週一二四五，讓週三和週末休息。桌面划船和反向划船是居家練背最好的替代方案，一定要做。',
+    days: [
+      { title: 'Day 1 上肢', focus: '推', moves: [
+        {key:true, name:'伏地挺身',sets:'4×12',tip:'核心收緊，全幅度'},
+        {key:false,name:'上斜伏地挺身',sets:'3×12',tip:'腳墊高強調上胸'},
+        {key:false,name:'下斜伏地挺身',sets:'3×12',tip:'手墊高強調下胸'},
+        {key:false,name:'窄距伏地挺身',sets:'3×10',tip:'三頭強化'},
+        {key:false,name:'棒式',sets:'3×40秒',tip:'核心收緊'},
+        {key:false,name:'超人式',sets:'3×12',tip:'下背強化'},
+      ]},
+      { title: 'Day 2 下肢', focus: '股四頭＋臀', moves: [
+        {key:true, name:'深蹲',sets:'4×15',tip:'蹲到底，背部中立'},
+        {key:false,name:'弓步蹲',sets:'3×12/側',tip:'上身直立'},
+        {key:false,name:'臀橋',sets:'4×15',tip:'頂點夾臀停 1 秒'},
+        {key:false,name:'側蹲',sets:'3×10/側',tip:'內收肌強化'},
+        {key:false,name:'登山者式',sets:'3×20/側',tip:'核心穩定'},
+        {key:false,name:'深蹲跳',sets:'3×10',tip:'輕落地'},
+      ]},
+      { title: 'Day 3 上肢', focus: '拉＋核心', moves: [
+        {key:true, name:'桌面划船',sets:'4×12',tip:'胸口貼桌邊，感受背部'},
+        {key:false,name:'寬距伏地挺身',sets:'3×12',tip:'胸部強化'},
+        {key:false,name:'反向划船',sets:'3×12',tip:'找椅子或桌子輔助'},
+        {key:false,name:'捲腹',sets:'3×15',tip:'感受腹部收縮'},
+        {key:false,name:'反向捲腹',sets:'3×15',tip:'下背不離地'},
+        {key:false,name:'側棒式',sets:'3×30秒/側',tip:'核心穩定'},
+      ]},
+      { title: 'Day 4 下肢＋全身', focus: '臀腿後側', moves: [
+        {key:true, name:'單腿臀橋',sets:'4×12/側',tip:'穩定骨盆不歪斜'},
+        {key:false,name:'羅馬尼亞單腿硬舉',sets:'3×10/側',tip:'感受大腿後側'},
+        {key:false,name:'相撲深蹲',sets:'4×15',tip:'強調內收肌和臀部'},
+        {key:false,name:'波比跳',sets:'3×8',tip:'全身燃脂'},
+        {key:false,name:'棒式',sets:'3×45秒',tip:'核心收緊'},
+        {key:false,name:'開合跳',sets:'3×30秒',tip:'有氧收尾'},
+      ]},
+    ]
+  },
+  home_intermediate_4: {
+    title: '居家訓練計畫 — 中階｜每週 4 天',
+    note: '中階居家訓練重點在動作難度升級，不是次數堆疊。保加利亞分腿蹲和北歐腿彎舉是居家最有效的腿部動作，掌握這兩個進步會很快。',
+    days: [
+      { title: 'Day 1 上肢推', focus: '胸＋三頭', moves: [
+        {key:true, name:'鑽石伏地挺身',sets:'4×12',tip:'三頭主導，手肘夾緊'},
+        {key:false,name:'爆發伏地挺身',sets:'4×8',tip:'推起離地，強化爆發力'},
+        {key:false,name:'上斜伏地挺身',sets:'3×12',tip:'腳墊高強調上胸'},
+        {key:false,name:'側向伏地挺身',sets:'3×10/側',tip:'單側強化'},
+        {key:false,name:'棒式撐體',sets:'3×60秒',tip:'核心全程收緊'},
+        {key:false,name:'三頭椅撐',sets:'3×15',tip:'手放椅子後方'},
+      ]},
+      { title: 'Day 2 下肢', focus: '單腿訓練', moves: [
+        {key:true, name:'保加利亞分腿蹲',sets:'4×10/側',tip:'後腳放椅上，上身直立'},
+        {key:false,name:'單腿深蹲輔助版',sets:'3×8/側',tip:'手扶牆輔助平衡'},
+        {key:false,name:'單腿臀橋',sets:'4×12/側',tip:'頂點夾臀停 1 秒'},
+        {key:false,name:'北歐腿彎舉',sets:'3×8',tip:'離心慢速，膝蓋夾緊'},
+        {key:false,name:'登山者式',sets:'3×25/側',tip:'快速節奏'},
+        {key:false,name:'深蹲跳',sets:'4×10',tip:'輕落地，膝蓋微彎'},
+      ]},
+      { title: 'Day 3 上肢拉＋核心', focus: '背部', moves: [
+        {key:true, name:'反向划船',sets:'4×12',tip:'胸口挺起，肩胛夾緊'},
+        {key:false,name:'桌面划船',sets:'4×12',tip:'全幅度動作'},
+        {key:false,name:'超人式進階',sets:'3×15',tip:'手腳同時抬起'},
+        {key:false,name:'側棒式抬腿',sets:'3×12/側',tip:'臀中肌強化'},
+        {key:false,name:'捲腹＋反向捲腹',sets:'3×15',tip:'超級組上下腹'},
+        {key:false,name:'波比跳',sets:'3×10',tip:'全身燃脂'},
+      ]},
+      { title: 'Day 4 全身', focus: '爆發＋核心', moves: [
+        {key:true, name:'波比跳',sets:'4×10',tip:'全力爆發，節奏穩定'},
+        {key:false,name:'跳箱深蹲',sets:'4×8',tip:'輕落地，膝蓋微彎'},
+        {key:false,name:'爆發伏地挺身',sets:'3×8',tip:'推起離地'},
+        {key:false,name:'側向跳躍',sets:'3×10/側',tip:'單腳落地穩定'},
+        {key:false,name:'棒式＋側棒式',sets:'3×45秒',tip:'核心全程收緊'},
+        {key:false,name:'高抬腿衝刺',sets:'5×20秒',tip:'全力衝刺＋40 秒休息'},
+      ]},
+    ]
+  },
+};
+
+// Fallback for undefined combos
+const FALLBACK = {
+  fat_loss_beginner_5:   'fat_loss_beginner_4',
+  fat_loss_advanced_3:   'fat_loss_intermediate_4',
+  fat_loss_advanced_4:   'fat_loss_intermediate_4',
+  fat_loss_advanced_5:   'fat_loss_intermediate_5',
+  muscle_beginner_5:     'muscle_beginner_4',
+  muscle_advanced_3:     'muscle_advanced_5',
+  muscle_advanced_4:     'muscle_advanced_5',
+  home_beginner_5:       'home_beginner_4',
+  home_intermediate_3:   'home_intermediate_4',
+  home_intermediate_5:   'home_intermediate_4',
+  home_advanced_3:       'home_intermediate_4',
+  home_advanced_4:       'home_intermediate_4',
+  home_advanced_5:       'home_intermediate_4',
+};
+
+let rawPlanText = '';
+
+function generateWorkout() {
+  const goal  = document.getElementById('goal').value;
+  const level = document.getElementById('level').value;
+  const days  = getDay();
+  const key   = `${goal}_${level}_${days}`;
+  const plan  = PLANS[key] || PLANS[FALLBACK[key]];
+
+  const card = document.getElementById('outputCard');
+  const body = document.getElementById('outputBody');
+  card.classList.add('visible');
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  body.innerHTML = `<div class="loader"><div class="dots"><span></span><span></span><span></span></div>規劃你的課表中…</div>`;
+  document.getElementById('ctaBlock').style.display = 'none';
+
+  setTimeout(() => {
+    if (!plan) {
+      body.innerHTML = `<div style="color:#FF6B35;padding:20px;text-align:center">⚠️ 查無對應課表，請嘗試其他組合</div>`;
+      return;
+    }
+    document.getElementById('outputTitle').textContent = plan.title;
+    let html = '';
+    let txt  = plan.title + '\n\n';
+
+    plan.days.forEach(day => {
+      html += `<div class="day-header">📅 ${day.title}<span class="focus-badge">🎯 主軸：${day.focus}</span></div>`;
+      html += `<table class="workout-table"><thead><tr><th>動作</th><th>組數 × 次數</th><th>執行重點</th></tr></thead><tbody>`;
+      txt  += `【${day.title}｜主軸：${day.focus}】\n`;
+      day.moves.forEach(m => {
+        const cls = m.key ? ' class="key-move"' : '';
+        html += `<tr${cls}><td>${m.name}</td><td>${m.sets}</td><td>${m.tip}</td></tr>`;
+        txt  += `${m.key ? '★ ' : ''}${m.name}　${m.sets}　${m.tip}\n`;
+      });
+      html += `</tbody></table>`;
+      txt  += '\n';
+    });
+
+    html += `<div class="note-box"><strong>📌 教練提醒</strong><br>${plan.note}</div>`;
+    txt  += `📌 教練提醒\n${plan.note}`;
+
+    rawPlanText = txt;
+    body.innerHTML = html;
+    document.getElementById('ctaBlock').style.display = 'flex';
+  }, 800);
+}
+
+function copyPlan() {
+  if (!rawPlanText) return;
+  navigator.clipboard.writeText(rawPlanText).then(() => {
+    const btn = document.querySelector('.btn-copy');
+    btn.textContent = '✅ 已複製';
+    setTimeout(() => btn.textContent = '📋 複製課表', 2000);
+  });
+}
+</script>
+</body>
+</html>

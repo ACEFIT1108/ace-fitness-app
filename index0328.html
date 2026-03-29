@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACE 健康管理平台</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, collection, addDoc, query,
+  where, orderBy, onSnapshot, getDocs, serverTimestamp, updateDoc, deleteDoc }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// ★★ 貼上你的 Firebase 設定 ★★
+const firebaseConfig = {
+  apiKey: "AIzaSyA-SwBGyu_eS_zgNTEdtC8wYe9CXne3ED0",
+  authDomain: "AIzaSyA-ace-fitness-38fad.firebaseapp.com",
+  projectId: "ace-fitness-38fad",
+  storageBucket: "ace-fitness-38fad.firebasestorage.app",
+  messagingSenderId: "823574956232",
+  appId: "1:823574956232:web:fa4df94bedda75b2583dfd"
+};
+
+const app      = initializeApp(firebaseConfig);
+const auth     = getAuth(app);
+const db       = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+let currentUser   = null;
+let currentB64    = null;
+let goals         = { cal: 1800, pro: 130, carb: 180, fat: 60 };
+let todayEntries  = [];
+let weightLog     = [];
+let comments      = [];
+let chartInst     = {};
+let activeTab     = 'food';
+let unsubComments = null;
+
+// ── Auth ───────────────────────────────────
+onAuthStateChanged(auth, async user => {
+  if (user) {
+    currentUser = user;
+    // Update header
+    const ph = document.getElementById('userPhoto');
+    const pn = document.getElementById('userName');
+    if (ph && user.photoURL) ph.src = user.photoURL;
+    if (pn) pn.textContent = user.displayName?.split(' ')[0] || '學員';
+    await ensureUserDoc();
+    await loadTodayEntries();
+    subscribeComments();
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appScreen').style.display   = 'flex';
+    buildNav(); buildPanel();
+  } else {
+    if (unsubComments) unsubComments();
+    currentUser = null;
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('appScreen').style.display   = 'none';
+  }
+});
+
+async function ensureUserDoc() {
+  const ref  = doc(db, 'users', currentUser.uid);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) {
+    await setDoc(ref, { name: currentUser.displayName || '學員', email: currentUser.email, photoURL: currentUser.photoURL || '', role: 'student', goals, weightLog: [], createdAt: serverTimestamp() });
+  } else {
+    const d = snap.data(); goals = d.goals || goals; weightLog = d.weightLog || [];
+  }
+}
+
+async function loadTodayEntries() {
+  const snap = await getDocs(query(collection(db,'users',currentUser.uid,'entries'), where('date','==',todayKey()), orderBy('ts','asc')));
+  todayEntries = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+function subscribeComments() {
+  if (unsubComments) unsubComments();
+  unsubComments = onSnapshot(query(collection(db,'users',currentUser.uid,'comments'), orderBy('ts','desc')), snap => {
+    comments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    buildNav();
+    if (activeTab === 'comments') buildPanel();
+  });
+}
+
+function todayKey() { return new Date().toLocaleDateString('zh-TW'); }
+async function saveUserDoc(data) { await setDoc(doc(db,'users',currentUser.uid), data, { merge: true }); }
+
+// ── Google login ───────────────────────────
+window.googleLogin = async function() {
+  const btn = document.getElementById('googleBtn');
+  btn.disabled = true; btn.textContent = '登入中...';
+  try { await signInWithPopup(auth, provider); }
+  catch(e) {
+    document.getElementById('lErr').textContent = '登入失敗，請再試一次';
+    btn.disabled = false;
+    btn.innerHTML = gBtnInner();
+  }
+};
+window.doLogout = async function() { if (unsubComments) unsubComments(); await signOut(auth); };
+function gBtnInner() {
+  return `<svg width="18" height="18" viewBox="0 0 48 48" style="flex-shrink:0"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>使用 Google 帳號登入`;
+}
+
+// ── Nav ────────────────────────────────────
+const TABS = [
+  {id:'food',      label:'飲食'},
+  {id:'weight',    label:'體重'},
+  {id:'goals',     label:'目標'},
+  {id:'challenge', label:'挑戰賽'},
+  {id:'comments',  label:'評語'},
+];
+
+function buildNav() {
+  const unread = comments.filter(c=>!c.read).length;
+  document.getElementById('nav').innerHTML = TABS.map(t => {
+    const badge = (t.id==='comments' && unread>0)
+      ? `<span style="background:#e74c3c;color:#fff;font-size:10px;border-radius:10px;padding:1px 5px;margin-left:2px">${unread}</span>` : '';
+    return `<button class="nb${t.id===activeTab?' on':''}" onclick="sw('${t.id}')">${t.label}${badge}</button>`;
+  }).join('');
+}
+window.sw = function(id) { activeTab=id; buildNav(); buildPanel(); };
+
+function buildPanel() {
+  const el = document.getElementById('content'); el.innerHTML='';
+  ({food:pFood, weight:pWeight, goals:pGoals, challenge:pChallenge, comments:pComments})[activeTab]?.(el);
+}
+
+// ── FOOD ───────────────────────────────────
+function pFood(el) {
+  const tCal=todayEntries.reduce((s,e)=>s+e.cal,0);
+  const tPro=todayEntries.reduce((s,e)=>s+e.pro,0);
+  const tCarb=todayEntries.reduce((s,e)=>s+e.carb,0);
+  const rem=goals.cal-tCal;
+  el.innerHTML=`
+  <div class="mets">
+    <div class="met"><div class="mn">${tCal}</div><div class="mu">kcal 攝取</div></div>
+    <div class="met"><div class="mn">${tPro}g</div><div class="mu">蛋白質</div></div>
+    <div class="met"><div class="mn ${rem>=0?'g':'r'}">${Math.abs(rem)}</div><div class="mu">${rem>=0?'kcal 剩餘':'kcal 超標'}</div></div>
+  </div>
+  <div class="card">
+    <div class="ch">拍照 / 描述食物</div>
+    <img id="pi" style="width:100%;border-radius:8px;display:none;margin-bottom:10px;max-height:200px;object-fit:cover">
+    <div class="uz" id="uz"><input type="file" accept="image/*" onchange="hf(event)"><div style="font-size:26px;margin-bottom:6px">📷</div><div style="font-size:14px;color:var(--t2)">點擊上傳食物照片</div><div style="font-size:12px;color:var(--t3);margin-top:2px">也可以文字描述</div></div>
+    <div style="height:8px"></div>
+    <textarea id="fd" rows="3" placeholder="補充說明：大份、有加醬、吃了八分飽..."></textarea>
+    <div class="err" id="eb"></div>
+    <button class="btn bg" id="ab" onclick="af()" style="margin-bottom:8px">AI 分析熱量</button>
+    <div class="ld" id="ld"><div class="sp"></div>AI 分析中...</div>
+    <div class="aib" id="aib">
+      <div style="font-size:11px;color:var(--green);font-weight:700;letter-spacing:.08em;margin-bottom:7px">AI 分析結果</div>
+      <div id="cb" class="conf"></div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:10px" id="an"></div>
+      <div class="mg">
+        <div class="mb"><div class="mn" id="ac">—</div><div style="font-size:10px;color:var(--t3);margin-top:2px">熱量</div></div>
+        <div class="mb"><div class="mn" id="ap">—</div><div style="font-size:10px;color:var(--t3);margin-top:2px">蛋白質</div></div>
+        <div class="mb"><div class="mn" id="aca">—</div><div style="font-size:10px;color:var(--t3);margin-top:2px">碳水</div></div>
+        <div class="mb"><div class="mn" id="af2">—</div><div style="font-size:10px;color:var(--t3);margin-top:2px">脂肪</div></div>
+      </div>
+      <div style="font-size:12px;color:var(--t2);margin-top:6px" id="ano"></div>
+      <div style="height:10px"></div>
+      <button class="btn bg" onclick="se()" style="margin-bottom:7px">儲存並回報教練</button>
+      <button class="btn bgh" onclick="rf()">重新分析</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch">今日進度</div>
+    ${pb('熱量',tCal,goals.cal,'kcal','var(--green)')}
+    ${pb('蛋白質',tPro,goals.pro,'g','#2980b9')}
+    ${pb('碳水',tCarb,goals.carb,'g','#e67e22')}
+  </div>
+  <div class="card">
+    <div class="ch">今日記錄</div>
+    ${todayEntries.length===0
+      ?'<div style="color:var(--t3);font-size:13px;text-align:center;padding:8px">尚無記錄</div>'
+      :todayEntries.map(e=>`<div class="cr"><div><div style="font-weight:500">${e.name}</div><div style="font-size:12px;color:var(--t2)">${e.time}</div></div><div style="display:flex;align-items:center;gap:10px"><div style="font-weight:700;color:var(--green)">${e.cal} kcal</div><button onclick="de('${e.id}')" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:14px">✕</button></div></div>`).join('')}
+  </div>`;
+  if(currentB64){document.getElementById('pi').src='data:image/jpeg;base64,'+currentB64;document.getElementById('pi').style.display='block';document.getElementById('uz').style.display='none';}
+}
+
+function pb(l,v,m,u,c){const p=Math.min(Math.round(v/m*100),100);return `<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span style="color:var(--t2)">${l}</span><span style="font-weight:500">${v} / ${m} ${u}</span></div><div style="height:5px;background:var(--bg4);border-radius:3px;overflow:hidden"><div style="width:${p}%;height:100%;background:${c};border-radius:3px;transition:width .5s"></div></div></div>`;}
+
+window.hf = function(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{currentB64=ev.target.result.split(',')[1];document.getElementById('pi').src=ev.target.result;document.getElementById('pi').style.display='block';document.getElementById('uz').style.display='none';};r.readAsDataURL(f);};
+
+window.af = async function(){
+  const desc=document.getElementById('fd').value.trim();
+  if(!currentB64&&!desc){se2('請上傳照片或輸入描述');return;}
+  he();document.getElementById('ab').disabled=true;document.getElementById('ld').style.display='block';document.getElementById('aib').style.display='none';
+  try{
+    const res=await fetch('https://analyzefood-hzpsl3cvna-uc.a.run.app',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({imageBase64:currentB64||null,description:desc||''})});
+    const d=await res.json();
+    document.getElementById('an').textContent=d.food_name;
+    document.getElementById('ac').textContent=d.calories;
+    document.getElementById('ap').textContent=d.protein_g;
+    document.getElementById('aca').textContent=d.carbs_g;
+    document.getElementById('af2').textContent=d.fat_g;
+    document.getElementById('ano').textContent=d.note||'';
+    const b=document.getElementById('cb');
+    b.textContent=d.confidence==='high'?'辨識度：高':d.confidence==='medium'?'辨識度：中（確認份量）':'辨識度：低（補充描述）';
+    b.className='conf '+(d.confidence==='high'?'ch2':d.confidence==='medium'?'cm':'cl');
+    document.getElementById('aib').style.display='block';
+    document.getElementById('aib')._d=d;
+  }catch(e){se2('AI 分析失敗，請再試一次');}
+  finally{document.getElementById('ld').style.display='none';document.getElementById('ab').disabled=false;}
+};
+
+window.se = async function(){
+  const d=document.getElementById('aib')._d;if(!d)return;
+  const entry={name:d.food_name,cal:d.calories,pro:d.protein_g,carb:d.carbs_g,fat:d.fat_g,date:todayKey(),time:new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}),ts:serverTimestamp()};
+  const ref=await addDoc(collection(db,'users',currentUser.uid,'entries'),entry);
+  todayEntries.push({id:ref.id,...entry});rf();buildPanel();
+};
+window.de = async function(id){await deleteDoc(doc(db,'users',currentUser.uid,'entries',id));todayEntries=todayEntries.filter(e=>e.id!==id);buildPanel();};
+window.rf = function(){currentB64=null;const pi=document.getElementById('pi');if(pi)pi.style.display='none';const uz=document.getElementById('uz');if(uz)uz.style.display='block';const fd=document.getElementById('fd');if(fd)fd.value='';const aib=document.getElementById('aib');if(aib)aib.style.display='none';he();};
+function se2(m){const e=document.getElementById('eb');if(e){e.textContent=m;e.style.display='block';}}
+function he(){const e=document.getElementById('eb');if(e)e.style.display='none';}
+
+// ── WEIGHT ─────────────────────────────────
+function pWeight(el){
+  const rec=[...weightLog].slice(-7).reverse();
+  const first=weightLog[0]?.kg,last=weightLog[weightLog.length-1]?.kg;
+  const chg=first&&last?(last-first).toFixed(1):null;
+  el.innerHTML=`
+  <div class="card">
+    <div class="ch">記錄今日體重</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <input type="number" id="wi" placeholder="例：68.5" step="0.1" min="30" max="200" style="flex:1;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:14px;outline:none">
+      <button onclick="lw()" style="padding:0 18px;background:var(--green);color:#000;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">記錄</button>
+    </div>
+    ${rec.length===0?'<div style="color:var(--t3);font-size:13px;text-align:center;padding:6px">尚無紀錄</div>':rec.map((w,i)=>{const p=rec[i+1],d=p?(w.kg-p.kg):null,ds=d!==null?(d>0?`<span style="color:var(--red)">+${d.toFixed(1)}</span>`:d<0?`<span style="color:var(--green)">${d.toFixed(1)}</span>`:'—'):'';return `<div class="cr"><span style="color:var(--t2);font-size:13px">${w.date}</span><div style="display:flex;align-items:center;gap:12px"><span style="font-size:13px">${ds}</span><span style="font-weight:700">${w.kg} kg</span></div></div>`;}).join('')}
+  </div>
+  ${weightLog.length>1?`<div class="card"><div class="ch">體重趨勢</div><div style="position:relative;width:100%;height:170px"><canvas id="wc"></canvas></div></div>`:''}
+  ${chg!==null?`<div style="display:flex;background:var(--bg3);border-radius:8px;overflow:hidden;margin-bottom:12px">
+    <div style="flex:1;padding:11px 8px;text-align:center;border-right:1px solid var(--border)"><div style="font-size:17px;font-weight:700">${first} kg</div><div style="font-size:11px;color:var(--t3);margin-top:2px">起始</div></div>
+    <div style="flex:1;padding:11px 8px;text-align:center;border-right:1px solid var(--border)"><div style="font-size:17px;font-weight:700">${last} kg</div><div style="font-size:11px;color:var(--t3);margin-top:2px">目前</div></div>
+    <div style="flex:1;padding:11px 8px;text-align:center"><div style="font-size:17px;font-weight:700;color:${parseFloat(chg)<=0?'var(--green)':'var(--red)'}">${parseFloat(chg)>0?'+':''}${chg} kg</div><div style="font-size:11px;color:var(--t3);margin-top:2px">總變化</div></div>
+  </div>`:''}`;
+  if(weightLog.length>1)setTimeout(()=>{const ctx=document.getElementById('wc')?.getContext('2d');if(!ctx)return;if(chartInst.w)chartInst.w.destroy();const d=weightLog.slice(-14);chartInst.w=new Chart(ctx,{type:'line',data:{labels:d.map(w=>w.date.replace(/\d{4}\//,'')),datasets:[{data:d.map(w=>w.kg),borderColor:'#27ae60',backgroundColor:'rgba(39,174,96,.08)',borderWidth:2,pointRadius:3,pointBackgroundColor:'#27ae60',tension:.35,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#555',font:{size:11}},grid:{color:'rgba(255,255,255,.04)'},border:{display:false}},y:{ticks:{color:'#555',font:{size:11}},grid:{color:'rgba(255,255,255,.04)'},border:{display:false}}}}});},30);
+}
+window.lw = async function(){const v=parseFloat(document.getElementById('wi')?.value);if(!v||v<30||v>200)return;const t=todayKey(),idx=weightLog.findIndex(w=>w.date===t);if(idx>=0)weightLog[idx].kg=v;else weightLog.push({date:t,kg:v});await saveUserDoc({weightLog});buildPanel();};
+
+// ── GOALS ──────────────────────────────────
+function pGoals(el){
+  el.innerHTML=`
+  <div class="card">
+    <div class="ch">每日目標設定</div>
+    ${gr('熱量目標','gc',goals.cal,'kcal')}${gr('蛋白質','gp',goals.pro,'g')}${gr('碳水化合物','gca',goals.carb,'g')}${gr('脂肪','gf',goals.fat,'g')}
+    <div style="height:4px"></div>
+    <button class="btn bg" onclick="sg()">儲存目標</button>
+  </div>
+  <div class="card" style="background:var(--bg3)">
+    <div style="font-size:13px;color:var(--t2);line-height:1.8">減脂建議：熱量缺口 <span style="color:var(--green);font-weight:700">300–500 kcal</span>，蛋白質至少 <span style="color:#2980b9;font-weight:700">體重 × 1.6g</span>，避免肌肉流失。</div>
+  </div>`;
+}
+function gr(l,id,v,u){return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><label style="font-size:13px;color:var(--t2);min-width:76px">${l}</label><input type="number" id="${id}" value="${v}" min="0" max="9999" style="flex:1;padding:10px 12px;background:var(--bg4);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:14px;outline:none"><span style="font-size:12px;color:var(--t3);min-width:30px">${u}</span></div>`;}
+window.sg = async function(){goals={cal:parseInt(document.getElementById('gc').value)||1800,pro:parseInt(document.getElementById('gp').value)||130,carb:parseInt(document.getElementById('gca').value)||180,fat:parseInt(document.getElementById('gf').value)||60};await saveUserDoc({goals});buildPanel();};
+
+// ── CHALLENGE ──────────────────────────────
+async function pChallenge(el){
+  el.innerHTML='<div style="color:var(--t2);font-size:13px;text-align:center;padding:20px">載入排行榜...</div>';
+  try{
+    const snap=await getDocs(collection(db,'users'));
+    const all=snap.docs.map(d=>d.data()).filter(u=>u.role==='student'&&u.weightLog?.length>1);
+    all.sort((a,b)=>(b.weightLog[0].kg-b.weightLog[b.weightLog.length-1].kg)-(a.weightLog[0].kg-a.weightLog[a.weightLog.length-1].kg));
+    const myRank=all.findIndex(u=>u.email===currentUser.email)+1;
+    el.innerHTML=`
+    <div class="mets">
+      <div class="met"><div class="mn g">11</div><div class="mu">天進行中</div></div>
+      <div class="met"><div class="mn">${all.length}</div><div class="mu">位參賽者</div></div>
+      <div class="met"><div class="mn a">${myRank||'—'}</div><div class="mu">我的排名</div></div>
+    </div>
+    <div class="card">
+      <div class="ch">減重排行榜</div>
+      ${all.length===0?'<div style="color:var(--t3);font-size:13px;text-align:center;padding:8px">暫無資料</div>':
+        all.map((u,i)=>{
+          const loss=+(u.weightLog[0].kg-u.weightLog[u.weightLog.length-1].kg).toFixed(1);
+          const ml=+(all[0].weightLog[0].kg-all[0].weightLog[all[0].weightLog.length-1].kg).toFixed(1);
+          const pct=ml>0?Math.round(loss/ml*100):0;
+          const rc=i===0?'#f1c40f':i===1?'#95a5a6':i===2?'#e67e22':'var(--t3)';
+          const isMe=u.email===currentUser.email;
+          return `<div class="cr" style="${isMe?'background:rgba(39,174,96,.07);margin:0 -14px;padding:9px 14px;':''}">
+            <div style="display:flex;align-items:center;gap:10px;flex:1">
+              <div style="font-size:15px;font-weight:700;width:20px;color:${rc}">${i+1}</div>
+              <div style="width:30px;height:30px;border-radius:50%;overflow:hidden;flex-shrink:0;background:rgba(39,174,96,.15);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--green)">
+                ${u.photoURL?`<img src="${u.photoURL}" style="width:100%;height:100%;object-fit:cover">`:(u.name?.charAt(0)||'?')}
+              </div>
+              <div style="flex:1"><div style="font-size:13px;font-weight:500">${u.name}${isMe?' (我)':''}</div>
+                <div style="height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;margin-top:5px"><div style="width:${pct}%;height:100%;background:var(--green);border-radius:2px"></div></div>
+              </div>
+            </div>
+            <div style="font-size:13px;font-weight:700;min-width:52px;text-align:right;color:${loss>1?'var(--green)':'var(--t2)'}">-${loss} kg</div>
+          </div>`;
+        }).join('')}
+    </div>`;
+  }catch(e){el.innerHTML='<div style="color:var(--t3);font-size:13px;text-align:center;padding:20px">載入失敗</div>';}
+}
+
+// ── COMMENTS ───────────────────────────────
+async function pComments(el){
+  for(const c of comments.filter(c=>!c.read))
+    await updateDoc(doc(db,'users',currentUser.uid,'comments',c.id),{read:true});
+  el.innerHTML=`<div class="card"><div class="ch">教練評語</div>${
+    comments.length===0
+      ?'<div style="color:var(--t3);font-size:13px;text-align:center;padding:16px">尚無評語，保持記錄教練會給你回饋！</div>'
+      :comments.map(c=>`<div style="padding:12px 0;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:12px;font-weight:700;color:var(--green)">教練 ACE</span><span style="font-size:11px;color:var(--t3)">${c.dateStr||''}</span></div><div style="font-size:14px;line-height:1.7">${c.text}</div></div>`).join('')
+  }</div>`;
+}
+</script>
+<style>
+:root{--bg:#0c0c0c;--bg2:#161616;--bg3:#1e1e1e;--bg4:#252525;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);--text:#ececec;--t2:#888;--t3:#555;--green:#27ae60;--red:#e74c3c}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Noto Sans TC',sans-serif}
+#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;background:var(--bg)}
+.lb{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:36px 28px;width:100%;max-width:340px;text-align:center}
+.li{font-size:38px;margin-bottom:12px}
+.lt{font-size:22px;font-weight:700;margin-bottom:4px}.lt em{color:var(--green);font-style:normal}
+.ls{font-size:13px;color:var(--t2);margin-bottom:28px;line-height:1.6}
+.gb{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px 16px;background:#fff;color:#1f1f1f;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:opacity .2s}
+.gb:hover{opacity:.92}.gb:disabled{opacity:.5;cursor:not-allowed}
+.le{font-size:13px;color:var(--red);margin-top:12px;min-height:18px}
+#appScreen{display:none;flex-direction:column;height:100vh;max-width:500px;margin:0 auto}
+.hd{padding:14px 18px 0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.logo{font-size:15px;font-weight:700}.logo em{color:var(--green);font-style:normal}
+.ui{display:flex;align-items:center;gap:8px}
+.up{width:28px;height:28px;border-radius:50%;overflow:hidden;flex-shrink:0;background:var(--bg3)}
+.up img{width:100%;height:100%;object-fit:cover}
+.un{font-size:12px;color:var(--t2);max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav{display:flex;padding:12px 18px 0;border-bottom:1px solid var(--border);flex-shrink:0}
+.nb{flex:1;text-align:center;padding:8px 2px;font-size:12px;color:var(--t3);cursor:pointer;border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;font-family:inherit;transition:all .2s}
+.nb.on{color:var(--green);border-bottom-color:var(--green);font-weight:500}
+#content{flex:1;overflow-y:auto;padding:14px 18px 32px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px}
+.ch{font-size:11px;font-weight:700;color:var(--t3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:11px}
+.cr{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)}
+.cr:last-child{border-bottom:none}
+.mets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.met{background:var(--bg3);border-radius:8px;padding:11px 8px;text-align:center}
+.mn{font-size:20px;font-weight:700}.mu{font-size:11px;color:var(--t2);margin-top:2px}
+.g{color:var(--green)}.r{color:var(--red)}.a{color:#e67e22}
+.uz{border:2px dashed var(--border2);border-radius:12px;padding:26px 16px;text-align:center;cursor:pointer;position:relative;transition:all .2s}
+.uz:hover{border-color:var(--green);background:rgba(39,174,96,.08)}
+.uz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+textarea{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:14px;padding:10px 12px;resize:none;outline:none}
+textarea:focus{border-color:var(--border2)}
+.btn{display:flex;align-items:center;justify-content:center;width:100%;padding:12px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:opacity .2s}
+.btn:hover{opacity:.85}.btn:disabled{opacity:.35;cursor:not-allowed}
+.bg{background:var(--green);color:#000}
+.bgh{background:var(--bg3);color:var(--t2);border:1px solid var(--border);font-weight:400}
+.aib{display:none;background:rgba(39,174,96,.1);border:1px solid rgba(39,174,96,.2);border-radius:12px;padding:14px;margin-bottom:10px}
+.mg{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.mb{background:rgba(0,0,0,.3);border-radius:8px;padding:8px 4px;text-align:center}
+.conf{display:inline-block;font-size:11px;padding:3px 8px;border-radius:20px;margin-bottom:7px}
+.ch2{background:rgba(39,174,96,.15);color:var(--green)}.cm{background:rgba(230,126,34,.15);color:#e67e22}.cl{background:rgba(231,76,60,.1);color:var(--red)}
+.ld{display:none;text-align:center;padding:18px;color:var(--t2);font-size:13px}
+.sp{width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.err{display:none;background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.25);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--red);margin-bottom:10px}
+</style>
+</head>
+<body>
+<div id="loginScreen">
+  <div class="lb">
+    <div class="li">💪</div>
+    <div class="lt"><em>ACE</em> 健康管理平台</div>
+    <div class="ls">記錄飲食・追蹤體態<br>教練陪伴・共同達標</div>
+    <button class="gb" id="googleBtn" onclick="googleLogin()">
+      <svg width="18" height="18" viewBox="0 0 48 48" style="flex-shrink:0"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      使用 Google 帳號登入
+    </button>
+    <div class="le" id="lErr"></div>
+  </div>
+</div>
+<div id="appScreen">
+  <div class="hd">
+    <div class="logo"><em>ACE</em> 健康管理平台</div>
+    <div class="ui">
+      <div class="up"><img id="userPhoto" src="" alt="" onerror="this.style.display='none'"></div>
+      <span class="un" id="userName"></span>
+      <button onclick="doLogout()" style="background:none;border:none;color:var(--t3);font-size:12px;cursor:pointer;font-family:inherit;margin-left:2px">登出</button>
+    </div>
+  </div>
+  <div class="nav" id="nav"></div>
+  <div id="content"></div>
+</div>
+</body>
+</html>
