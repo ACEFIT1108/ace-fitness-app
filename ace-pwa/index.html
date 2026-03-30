@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ACE訓練">
+<meta name="theme-color" content="#0f0f0f">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<title>ACE 訓練日誌</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f0f0f; --surface: #1a1a1a; --surface2: #242424; --surface3: #2e2e2e;
+  --border: #2e2e2e; --accent: #e8ff47; --accent2: #ff6b35; --text: #f0f0f0;
+  --muted: #666; --red: #ff4444; --green: #44ff88; --blue: #47b4ff;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { background: var(--bg); color: var(--text); font-family: 'Noto Sans TC', sans-serif; max-width: 480px; margin: 0 auto; min-height: 100vh; }
+button { cursor: pointer; }
+
+/* HEADER */
+.header { padding: 16px 20px 0; display: flex; align-items: center; justify-content: space-between; }
+.logo { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--accent); letter-spacing: 3px; }
+.logo sub { color: var(--muted); font-size: 11px; font-family: 'Noto Sans TC'; letter-spacing: 1px; margin-left: 6px; vertical-align: middle; }
+.streak { background: var(--surface2); border: 1px solid var(--border); padding: 5px 12px; border-radius: 20px; font-size: 12px; color: var(--accent); }
+
+/* NAV */
+.nav { display: flex; padding: 12px 20px; gap: 8px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--border); }
+.nav::-webkit-scrollbar { display: none; }
+.nav-btn { background: none; border: 1px solid var(--border); color: var(--muted); padding: 7px 14px; border-radius: 20px; font-size: 12px; font-family: 'Noto Sans TC'; white-space: nowrap; transition: all 0.2s; }
+.nav-btn.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+
+/* PAGES */
+.page { display: none; padding: 20px 20px 120px; }
+.page.active { display: block; }
+.section-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; color: var(--muted); margin-bottom: 14px; }
+.section-title span { color: var(--accent); }
+
+/* MUSCLE GRID */
+.muscle-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 18px; }
+.muscle-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 12px 6px; border-radius: 12px; font-family: 'Noto Sans TC'; font-size: 13px; transition: all 0.2s; text-align: center; }
+.muscle-btn .icon { font-size: 18px; display: block; margin-bottom: 4px; }
+.muscle-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(232,255,71,0.05); }
+.muscle-btn.hyrox-btn { border-color: var(--accent2); color: var(--accent2); }
+.muscle-btn.hyrox-btn.active { background: rgba(255,107,53,0.08); }
+
+/* EXERCISE LIST */
+.ex-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.ex-section-label { font-size: 12px; color: var(--muted); letter-spacing: 1px; }
+.add-custom-btn { background: none; border: 1px dashed var(--accent); color: var(--accent); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-family: 'Noto Sans TC'; }
+.exercise-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.exercise-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s; }
+.exercise-item:hover { border-color: var(--accent2); }
+.exercise-item .name { font-size: 14px; font-weight: 500; }
+.exercise-item .meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.add-ex-btn { background: var(--accent); color: #000; border: none; width: 26px; height: 26px; border-radius: 50%; font-size: 16px; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; transition: all 0.2s; }
+.add-ex-btn.added { background: var(--surface3); color: var(--muted); }
+
+/* WORKOUT CARDS */
+.workout-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 10px; }
+.wc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.wc-title { font-size: 15px; font-weight: 700; }
+.del-btn { background: none; border: none; color: var(--muted); font-size: 16px; }
+.sets-table { width: 100%; border-collapse: collapse; }
+.sets-table th { font-size: 10px; color: var(--muted); text-align: center; padding: 3px 0; letter-spacing: 1px; }
+.sets-table td { padding: 5px 3px; text-align: center; }
+.set-input { background: var(--surface2); border: 1px solid var(--border); color: var(--text); width: 58px; padding: 5px; border-radius: 8px; text-align: center; font-family: 'Noto Sans TC'; font-size: 13px; }
+.set-input:focus { outline: none; border-color: var(--accent); }
+.timer-icon-btn { background: none; border: none; font-size: 16px; }
+.add-set-btn { width: 100%; margin-top: 8px; background: none; border: 1px dashed var(--border); color: var(--muted); padding: 7px; border-radius: 8px; font-family: 'Noto Sans TC'; font-size: 12px; transition: all 0.2s; }
+.add-set-btn:hover { border-color: var(--accent); color: var(--accent); }
+.finish-btn { width: 100%; padding: 15px; background: var(--accent); color: #000; border: none; border-radius: 14px; font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; margin-top: 4px; }
+
+/* TIMER BAR */
+.timer-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: var(--surface); border-top: 2px solid var(--accent); padding: 10px 16px; display: flex; align-items: center; gap: 10px; z-index: 100; }
+.timer-display { font-family: 'Bebas Neue', sans-serif; font-size: 30px; color: var(--accent); min-width: 76px; }
+.timer-label { font-size: 10px; color: var(--muted); letter-spacing: 1px; }
+.timer-controls { display: flex; gap: 6px; margin-left: auto; }
+.t-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 7px 11px; border-radius: 8px; font-family: 'Noto Sans TC'; font-size: 12px; }
+.t-btn.primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+
+/* BODY STATS */
+.body-form { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.form-group label { font-size: 11px; color: var(--muted); letter-spacing: 1px; display: block; margin-bottom: 5px; }
+.form-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 10px; font-family: 'Noto Sans TC'; font-size: 14px; }
+.form-input:focus { outline: none; border-color: var(--accent); }
+.save-btn { width: 100%; padding: 12px; background: var(--surface2); border: 1px solid var(--accent); color: var(--accent); border-radius: 10px; font-family: 'Noto Sans TC'; font-size: 14px; font-weight: 700; margin-top: 4px; }
+
+/* NUTRITION */
+.nutrition-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+.nut-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 8px; text-align: center; }
+.nut-card .val { font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: var(--accent); }
+.nut-card .lbl { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.nut-card .unit { font-size: 10px; color: var(--muted); }
+.nut-goal-bar { background: var(--surface2); border-radius: 4px; height: 6px; margin-top: 6px; overflow: hidden; }
+.nut-goal-fill { height: 100%; border-radius: 4px; background: var(--accent); transition: width 0.3s; }
+.meal-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.meal-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; }
+.meal-item .meal-name { font-size: 14px; font-weight: 500; }
+.meal-item .meal-macros { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.meal-item .del-meal { background: none; border: none; color: var(--muted); font-size: 14px; }
+.add-meal-form { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 14px; }
+.macro-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; }
+
+/* TEMPLATES */
+.template-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 10px; }
+.template-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+.template-title { font-size: 15px; font-weight: 700; }
+.template-badge { font-size: 10px; background: rgba(232,255,71,0.1); border: 1px solid var(--accent); color: var(--accent); padding: 2px 8px; border-radius: 10px; letter-spacing: 1px; }
+.template-day { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+.template-day span { color: var(--text); }
+.use-template-btn { width: 100%; padding: 10px; background: none; border: 1px solid var(--accent); color: var(--accent); border-radius: 10px; font-family: 'Noto Sans TC'; font-size: 13px; font-weight: 700; margin-top: 10px; }
+
+/* HYROX */
+.hyrox-header { background: linear-gradient(135deg, rgba(255,107,53,0.15), rgba(255,107,53,0.05)); border: 1px solid var(--accent2); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+.hyrox-title { font-family: 'Bebas Neue', sans-serif; font-size: 26px; color: var(--accent2); letter-spacing: 3px; }
+.hyrox-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.hyrox-stations { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.hyrox-station { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: flex; align-items: center; gap: 12px; }
+.station-num { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--accent2); min-width: 30px; }
+.station-info { flex: 1; }
+.station-name { font-size: 14px; font-weight: 700; }
+.station-detail { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.station-time { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--muted); min-width: 60px; text-align: right; }
+.station-time.done { color: var(--green); }
+.hyrox-total { background: var(--surface); border: 1px solid var(--accent2); border-radius: 12px; padding: 14px; text-align: center; margin-bottom: 14px; }
+.hyrox-total .total-label { font-size: 12px; color: var(--muted); letter-spacing: 2px; }
+.hyrox-total .total-time { font-family: 'Bebas Neue', sans-serif; font-size: 42px; color: var(--accent2); }
+.hyrox-btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 2px; margin-bottom: 10px; }
+.hyrox-btn.start { background: var(--accent2); color: #fff; }
+.hyrox-btn.stop { background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
+
+/* HISTORY */
+.history-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 10px; }
+.h-date { font-size: 11px; color: var(--muted); letter-spacing: 1px; margin-bottom: 6px; }
+.h-title { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+.h-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.tag { background: var(--surface2); border: 1px solid var(--border); padding: 3px 9px; border-radius: 20px; font-size: 11px; color: var(--muted); }
+.h-stats { display: flex; gap: 14px; margin-top: 8px; }
+.h-stat { font-size: 12px; }
+.h-stat span { color: var(--accent); font-weight: 700; }
+
+/* PROGRESS */
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+.stat-card .val { font-family: 'Bebas Neue', sans-serif; font-size: 30px; color: var(--accent); }
+.stat-card .lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.chart-container { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 14px; }
+.chart-title { font-size: 12px; color: var(--muted); margin-bottom: 10px; letter-spacing: 1px; }
+.chart-select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 8px; font-family: 'Noto Sans TC'; font-size: 12px; margin-bottom: 10px; width: 100%; }
+
+/* MODAL */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; display: flex; align-items: flex-end; justify-content: center; }
+.modal { background: var(--surface); border-radius: 20px 20px 0 0; padding: 24px 20px; width: 100%; max-width: 480px; }
+.modal-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+.modal-close { float: right; background: none; border: none; color: var(--muted); font-size: 20px; }
+
+/* MISC */
+.empty { text-align: center; color: var(--muted); padding: 40px 20px; font-size: 13px; }
+.toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #000; padding: 9px 18px; border-radius: 20px; font-size: 12px; font-weight: 700; z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
+.toast.show { opacity: 1; }
+.hyrox-badge { display: inline-block; background: rgba(255,107,53,0.15); border: 1px solid var(--accent2); color: var(--accent2); padding: 1px 7px; border-radius: 4px; font-size: 10px; margin-left: 5px; }
+hr.divider { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">ACE<sub>訓練日誌</sub></div>
+  <div class="streak" id="streakBadge">🔥 0天</div>
+</div>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="showPage('record',this)">記錄</button>
+  <button class="nav-btn" onclick="showPage('nutrition',this)">營養</button>
+  <button class="nav-btn" onclick="showPage('body',this)">體態</button>
+  <button class="nav-btn" onclick="showPage('hyrox',this)">Hyrox</button>
+  <button class="nav-btn" onclick="showPage('templates',this)">計畫</button>
+  <button class="nav-btn" onclick="showPage('history',this)">歷史</button>
+  <button class="nav-btn" onclick="showPage('progress',this)">圖表</button>
+</nav>
+
+<!-- ===== RECORD ===== -->
+<div class="page active" id="page-record">
+  <div class="section-title">選擇<span>部位</span></div>
+  <div class="muscle-grid" id="muscleGrid"></div>
+  <div id="exerciseSection" style="display:none">
+    <div class="ex-section-header">
+      <div class="section-title" id="exSectionTitle" style="margin:0">動作</div>
+      <button class="add-custom-btn" onclick="openCustomModal()">+ 自訂動作</button>
+    </div>
+    <div class="exercise-list" id="exerciseList"></div>
+  </div>
+  <div id="currentWorkout" style="display:none">
+    <hr class="divider">
+    <div class="section-title">今日<span>訓練</span></div>
+    <div id="workoutCards"></div>
+    <button class="finish-btn" onclick="finishWorkout()">✓ 完成訓練</button>
+  </div>
+</div>
+
+<!-- ===== NUTRITION ===== -->
+<div class="page" id="page-nutrition">
+  <div class="section-title">今日<span>營養</span></div>
+  <div class="nutrition-summary" id="nutSummary"></div>
+  <div class="section-title">新增<span>食物</span></div>
+  <div class="add-meal-form">
+    <div class="form-group"><label>食物名稱</label><input class="form-input" id="mealName" placeholder="例：雞胸肉 200g"></div>
+    <div class="macro-row">
+      <div class="form-group"><label>蛋白質 (g)</label><input class="form-input" id="mealProtein" type="number" placeholder="0"></div>
+      <div class="form-group"><label>碳水 (g)</label><input class="form-input" id="mealCarb" type="number" placeholder="0"></div>
+      <div class="form-group"><label>脂肪 (g)</label><input class="form-input" id="mealFat" type="number" placeholder="0"></div>
+    </div>
+    <button class="save-btn" onclick="addMeal()">+ 加入記錄</button>
+  </div>
+  <div class="section-title">今日<span>飲食</span></div>
+  <div class="meal-list" id="mealList"></div>
+  <hr class="divider">
+  <div class="section-title">目標<span>設定</span></div>
+  <div class="body-form">
+    <div class="form-row">
+      <div class="form-group"><label>蛋白質目標 (g)</label><input class="form-input" id="goalProtein" type="number" placeholder="170"></div>
+      <div class="form-group"><label>碳水目標 (g)</label><input class="form-input" id="goalCarb" type="number" placeholder="200"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>脂肪目標 (g)</label><input class="form-input" id="goalFat" type="number" placeholder="60"></div>
+      <div class="form-group"><label>熱量目標 (kcal)</label><input class="form-input" id="goalCalorie" type="number" placeholder="2200"></div>
+    </div>
+    <button class="save-btn" onclick="saveNutGoals()">儲存目標</button>
+  </div>
+</div>
+
+<!-- ===== BODY ===== -->
+<div class="page" id="page-body">
+  <div class="section-title">體態<span>記錄</span></div>
+  <div class="body-form">
+    <div class="form-row">
+      <div class="form-group"><label>體重 (kg)</label><input class="form-input" id="inputWeight" type="number" step="0.1" placeholder="87.0"></div>
+      <div class="form-group"><label>體脂率 (%)</label><input class="form-input" id="inputBF" type="number" step="0.1" placeholder="20.0"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>骨骼肌 (kg)</label><input class="form-input" id="inputMuscle" type="number" step="0.1" placeholder=""></div>
+      <div class="form-group"><label>備註</label><input class="form-input" id="inputBodyNote" placeholder="例：訓練後"></div>
+    </div>
+    <button class="save-btn" onclick="saveBodyStat()">記錄今日數據</button>
+  </div>
+  <div class="stat-grid" id="bodyStatGrid"></div>
+  <div class="chart-container">
+    <div class="chart-title">⚖️ 體重趨勢</div>
+    <canvas id="weightChart" height="150"></canvas>
+  </div>
+  <div class="chart-container">
+    <div class="chart-title">🔥 體脂率趨勢</div>
+    <canvas id="bfChart" height="150"></canvas>
+  </div>
+</div>
+
+<!-- ===== HYROX ===== -->
+<div class="page" id="page-hyrox">
+  <div class="hyrox-header">
+    <div class="hyrox-title">HYROX SIM</div>
+    <div class="hyrox-sub">模擬比賽計時 — 8站 + 跑步</div>
+  </div>
+  <div class="hyrox-total">
+    <div class="total-label">總時間</div>
+    <div class="total-time" id="hyroxTotalTime">00:00:00</div>
+  </div>
+  <button class="hyrox-btn start" id="hyroxStartBtn" onclick="hyroxStart()">▶ 開始計時</button>
+  <button class="hyrox-btn stop" onclick="hyroxReset()">↺ 重置</button>
+  <div class="hyrox-stations" id="hyroxStations"></div>
+  <div id="hyroxHistory" style="margin-top:8px"></div>
+</div>
+
+<!-- ===== TEMPLATES ===== -->
+<div class="page" id="page-templates">
+  <div class="section-title">訓練<span>計畫模板</span></div>
+  <div id="templateList"></div>
+</div>
+
+<!-- ===== HISTORY ===== -->
+<div class="page" id="page-history">
+  <div class="section-title">訓練<span>歷史</span></div>
+  <div id="historyList"></div>
+</div>
+
+<!-- ===== PROGRESS ===== -->
+<div class="page" id="page-progress">
+  <div class="section-title">進度<span>統計</span></div>
+  <div class="stat-grid" id="statGrid"></div>
+  <div class="chart-container">
+    <div class="chart-title">📅 每週訓練次數</div>
+    <canvas id="weeklyChart" height="150"></canvas>
+  </div>
+  <div class="chart-container">
+    <div class="chart-title">🏆 動作最大重量趨勢</div>
+    <select class="chart-select" id="exerciseSelect" onchange="updatePRChart()"><option>選擇動作</option></select>
+    <canvas id="prChart" height="150"></canvas>
+  </div>
+</div>
+
+<!-- TIMER BAR -->
+<div class="timer-bar" id="timerBar" style="display:none">
+  <div><div class="timer-label">組間休息</div><div class="timer-display" id="timerDisplay">02:00</div></div>
+  <div class="timer-controls">
+    <button class="t-btn" onclick="adjustTimer(-10)">-10s</button>
+    <button class="t-btn" onclick="adjustTimer(10)">+10s</button>
+    <button class="t-btn primary" id="timerToggleBtn" onclick="toggleTimer()">暫停</button>
+    <button class="t-btn" onclick="stopTimer()">✕</button>
+  </div>
+</div>
+
+<!-- CUSTOM EXERCISE MODAL -->
+<div class="modal-overlay" id="customModal" style="display:none" onclick="if(event.target===this)closeCustomModal()">
+  <div class="modal">
+    <button class="modal-close" onclick="closeCustomModal()">✕</button>
+    <div class="modal-title">新增自訂動作</div>
+    <div class="form-group" style="margin-bottom:10px"><label>動作名稱</label><input class="form-input" id="customExName" placeholder="例：彈力帶深蹲"></div>
+    <div class="form-group" style="margin-bottom:14px"><label>部位</label>
+      <select class="form-input" id="customExMuscle">
+        <option>胸部</option><option>背部</option><option>臀腿</option>
+        <option>肩部</option><option>手臂</option><option>核心</option><option>Hyrox</option>
+      </select>
+    </div>
+    <button class="save-btn" onclick="saveCustomExercise()">新增動作</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+// ===================== EXERCISE DATABASE =====================
+const BASE_EXERCISES = {
+  胸部: ['臥推','上斜臥推','下斜臥推','啞鈴臥推','上斜啞鈴臥推','飛鳥','繩索夾胸','雙槓撐體','伏地挺身','蝴蝶機夾胸'],
+  背部: ['硬舉','羅馬尼亞硬舉','引體向上','輔助引體向上','槓鈴划船','單臂啞鈴划船','坐姿划船','滑輪下拉','T槓划船','直臂下壓','面拉'],
+  臀腿: ['深蹲','前蹲','保加利亞分腿蹲','弓步蹲','腿推','哈克深蹲','哈克早安式','史密斯深蹲','腿彎舉','腿伸展','臀橋','槓鈴臀橋','繩索後踢','機械開腿','機械夾腿','高腳杯深蹲','相撲硬舉'],
+  肩部: ['槓鈴肩推','啞鈴肩推','阿諾德推舉','側平舉','前平舉','俯身飛鳥','繩索側平舉','槓鈴聳肩','啞鈴聳肩'],
+  手臂: ['槓鈴彎舉','啞鈴彎舉','錘式彎舉','牧師椅彎舉','集中彎舉','繩索彎舉','三頭下壓','頭後三頭伸展','窄距臥推','三頭過頭伸展','法式推舉'],
+  核心: ['捲腹','仰臥起坐','懸垂抬腿','俄羅斯轉體','平板支撐','側平板','木砍','死蟲式','腹輪','自行車捲腹','登山者'],
+  Hyrox: ['跑步 1km','SkiErg 1000m','划船 1000m','農夫走路 50m','壁球拋 100次','腿推 100kg×50m','波比跳 100m','繩索拉 50m']
+};
+
+const HYROX_STATIONS = [
+  { num:1, run:'跑步 1km', work:'SkiErg 1000m' },
+  { num:2, run:'跑步 1km', work:'拉雪橇 50m (推)' },
+  { num:3, run:'跑步 1km', work:'推雪橇 50m (拉)' },
+  { num:4, run:'跑步 1km', work:'農夫走路 50m' },
+  { num:5, run:'跑步 1km', work:'壁球拋 100次' },
+  { num:6, run:'跑步 1km', work:'划船 1000m' },
+  { num:7, run:'跑步 1km', work:'波比跳 100m' },
+  { num:8, run:'跑步 1km', work:'腿推 100kg×50m' },
+];
+
+const TEMPLATES = [
+  { name:'ACE 減脂增肌 5日', badge:'推薦', days:[
+    { day:'週一', label:'胸部 + 三頭', exercises:['臥推','上斜臥推','飛鳥','三頭下壓','頭後三頭伸展'] },
+    { day:'週二', label:'背部 + 二頭', exercises:['硬舉','引體向上','槓鈴划船','坐姿划船','槓鈴彎舉'] },
+    { day:'週三', label:'臀腿', exercises:['深蹲','保加利亞分腿蹲','腿推','腿彎舉','臀橋'] },
+    { day:'週四', label:'肩部 + 核心', exercises:['槓鈴肩推','側平舉','俯身飛鳥','懸垂抬腿','俄羅斯轉體'] },
+    { day:'週五', label:'全身 / Hyrox', exercises:['SkiErg 1000m','划船 1000m','波比跳 100m','農夫走路 50m'] },
+    { day:'週六/日', label:'休息或羽球', exercises:[] },
+  ]},
+  { name:'Hyrox 備賽 4日', badge:'HYROX', days:[
+    { day:'週一', label:'臀腿力量', exercises:['深蹲','腿推','保加利亞分腿蹲','腿彎舉'] },
+    { day:'週二', label:'有氧耐力', exercises:['跑步 1km','SkiErg 1000m','划船 1000m'] },
+    { day:'週三', label:'上肢力量', exercises:['臥推','引體向上','槓鈴划船','槓鈴肩推'] },
+    { day:'週四', label:'Hyrox 模擬', exercises:['農夫走路 50m','壁球拋 100次','波比跳 100m','腿推 100kg×50m'] },
+    { day:'週五-日', label:'休息 / 輕有氧', exercises:[] },
+  ]},
+  { name:'3日全身訓練', badge:'入門', days:[
+    { day:'週一', label:'全身A', exercises:['深蹲','臥推','槓鈴划船','肩推','槓鈴彎舉'] },
+    { day:'週三', label:'全身B', exercises:['硬舉','上斜臥推','引體向上','側平舉','三頭下壓'] },
+    { day:'週五', label:'全身C', exercises:['保加利亞分腿蹲','飛鳥','坐姿划船','阿諾德推舉','錘式彎舉'] },
+  ]},
+];
+
+// ===================== STATE =====================
+let currentMuscle = '';
+let currentWorkoutExercises = {};
+let timerInterval = null, timerSeconds = 120, timerRunning = false;
+let hyroxInterval = null, hyroxRunning = false, hyroxTotalSeconds = 0;
+let hyroxCurrentStation = 0, hyroxStationSeconds = 0;
+let hyroxResults = [];
+let weeklyChart = null, prChart = null, weightChart = null, bfChart = null;
+
+// ===================== STORAGE =====================
+function getData(key, def=[]) { try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(def)); } catch { return def; } }
+function setData(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+function getWorkouts() { return getData('aceWorkouts'); }
+function getBodyStats() { return getData('aceBody'); }
+function getNutGoals() { return getData('aceNutGoals', {protein:170,carb:200,fat:60,calorie:2200}); }
+function getTodayMeals() {
+  const today = new Date().toDateString();
+  const all = getData('aceMeals', {});
+  return all[today] || [];
+}
+function saveTodayMeals(meals) {
+  const today = new Date().toDateString();
+  const all = getData('aceMeals', {});
+  all[today] = meals;
+  setData('aceMeals', all);
+}
+function getCustomExercises() { return getData('aceCustomEx', {}); }
+
+// ===================== PAGES =====================
+function showPage(p, btn) {
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-' + p).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (p === 'history') renderHistory();
+  if (p === 'progress') renderProgress();
+  if (p === 'body') renderBodyPage();
+  if (p === 'nutrition') renderNutritionPage();
+  if (p === 'hyrox') renderHyroxPage();
+  if (p === 'templates') renderTemplates();
+}
+
+// ===================== RECORD =====================
+function initMuscleGrid() {
+  const muscles = [
+    {key:'胸部',icon:'💪'},{key:'背部',icon:'🏋️'},{key:'臀腿',icon:'🦵'},
+    {key:'肩部',icon:'🔝'},{key:'手臂',icon:'💥'},{key:'核心',icon:'⚡'},
+    {key:'Hyrox',icon:'🏃',cls:'hyrox-btn'},
+  ];
+  document.getElementById('muscleGrid').innerHTML = muscles.map(m =>
+    `<button class="muscle-btn ${m.cls||''}" onclick="selectMuscle('${m.key}',this)">
+      <span class="icon">${m.icon}</span>${m.key}</button>`
+  ).join('');
+}
+
+function selectMuscle(muscle, btn) {
+  currentMuscle = muscle;
+  document.querySelectorAll('.muscle-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const custom = getCustomExercises();
+  const list = [...(BASE_EXERCISES[muscle]||[]), ...(custom[muscle]||[])];
+  document.getElementById('exSectionTitle').innerHTML = `選擇<span>${muscle}</span>動作`;
+  const el = document.getElementById('exerciseList');
+  el.innerHTML = list.map(ex => {
+    const added = !!currentWorkoutExercises[ex];
+    return `<div class="exercise-item">
+      <div>
+        <div class="name">${ex}${muscle==='Hyrox'?'<span class="hyrox-badge">HYROX</span>':''}</div>
+        <div class="meta">${getLastRecord(ex)}</div>
+      </div>
+      <button class="add-ex-btn ${added?'added':''}" id="btn-${ex.replace(/\s/g,'_')}" onclick="addExercise('${ex}',this)">${added?'✓':'+'}</button>
+    </div>`;
+  }).join('') || '<div class="empty">尚無動作，點擊右上角新增</div>';
+  document.getElementById('exerciseSection').style.display = 'block';
+}
+
+function getLastRecord(ex) {
+  const data = getWorkouts();
+  for (let i = data.length-1; i>=0; i--) {
+    const w = data[i].exercises[ex];
+    if (w?.sets?.length) {
+      const last = w.sets[w.sets.length-1];
+      return `上次：${last.weight||'?'}kg × ${last.reps||'?'}次`;
+    }
+  }
+  return '首次記錄';
+}
+
+function addExercise(name, btn) {
+  if (currentWorkoutExercises[name]) return;
+  currentWorkoutExercises[name] = { sets:[{weight:'',reps:''}] };
+  btn.textContent = '✓'; btn.classList.add('added');
+  renderWorkoutCards();
+  document.getElementById('currentWorkout').style.display = 'block';
+}
+
+function renderWorkoutCards() {
+  const container = document.getElementById('workoutCards');
+  container.innerHTML = Object.entries(currentWorkoutExercises).map(([name, data]) => `
+    <div class="workout-card">
+      <div class="wc-header">
+        <div class="wc-title">${name}</div>
+        <button class="del-btn" onclick="removeExercise('${name}')">🗑</button>
+      </div>
+      <table class="sets-table">
+        <thead><tr><th>組</th><th>重量kg</th><th>次數</th><th>休息</th></tr></thead>
+        <tbody>${data.sets.map((s,i) => `<tr>
+          <td style="color:var(--muted);font-size:12px">${i+1}</td>
+          <td><input class="set-input" type="number" value="${s.weight}" placeholder="kg" oninput="updateSet('${name}',${i},'weight',this.value)"></td>
+          <td><input class="set-input" type="number" value="${s.reps}" placeholder="次" oninput="updateSet('${name}',${i},'reps',this.value)"></td>
+          <td><button class="timer-icon-btn" onclick="startTimer()">⏱</button></td>
+        </tr>`).join('')}</tbody>
+      </table>
+      <button class="add-set-btn" onclick="addSet('${name}')">+ 新增組數</button>
+    </div>`).join('');
+}
+
+function updateSet(name, idx, field, val) { currentWorkoutExercises[name].sets[idx][field] = val; }
+function addSet(name) { currentWorkoutExercises[name].sets.push({weight:'',reps:''}); renderWorkoutCards(); }
+function removeExercise(name) {
+  delete currentWorkoutExercises[name];
+  renderWorkoutCards();
+  if (!Object.keys(currentWorkoutExercises).length) document.getElementById('currentWorkout').style.display = 'none';
+}
+
+function finishWorkout() {
+  if (!Object.keys(currentWorkoutExercises).length) { showToast('請先加入動作'); return; }
+  const muscles = [...new Set(Object.keys(currentWorkoutExercises).map(ex => {
+    return Object.entries(BASE_EXERCISES).find(([m,exs]) => exs.includes(ex))?.[0] || currentMuscle || '其他';
+  }))];
+  const data = getWorkouts();
+  data.push({ date: new Date().toISOString(), muscles, exercises: JSON.parse(JSON.stringify(currentWorkoutExercises)) });
+  setData('aceWorkouts', data);
+  currentWorkoutExercises = {};
+  document.getElementById('workoutCards').innerHTML = '';
+  document.getElementById('currentWorkout').style.display = 'none';
+  document.getElementById('exerciseSection').style.display = 'none';
+  document.querySelectorAll('.muscle-btn').forEach(b => b.classList.remove('active'));
+  updateStreak(); stopTimer();
+  showToast('✓ 訓練已記錄！');
+}
+
+// ===================== CUSTOM EXERCISE =====================
+function openCustomModal() { document.getElementById('customModal').style.display='flex'; if(currentMuscle) document.getElementById('customExMuscle').value=currentMuscle; }
+function closeCustomModal() { document.getElementById('customModal').style.display='none'; }
+function saveCustomExercise() {
+  const name = document.getElementById('customExName').value.trim();
+  const muscle = document.getElementById('customExMuscle').value;
+  if (!name) { showToast('請輸入動作名稱'); return; }
+  const custom = getCustomExercises();
+  if (!custom[muscle]) custom[muscle] = [];
+  if (custom[muscle].includes(name)) { showToast('動作已存在'); return; }
+  custom[muscle].push(name);
+  setData('aceCustomEx', custom);
+  closeCustomModal();
+  selectMuscle(muscle, document.querySelector('.muscle-btn.active'));
+  showToast(`✓ 已新增：${name}`);
+}
+
+// ===================== TIMER =====================
+function startTimer() {
+  timerSeconds = 120; timerRunning = true;
+  document.getElementById('timerBar').style.display = 'flex';
+  document.getElementById('timerToggleBtn').textContent = '暫停';
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    if (timerRunning) { timerSeconds--; if (timerSeconds<=0) { stopTimer(); showToast('💪 休息結束！'); return; } updateTimerDisplay(); }
+  }, 1000);
+  updateTimerDisplay();
+}
+function toggleTimer() { timerRunning=!timerRunning; document.getElementById('timerToggleBtn').textContent=timerRunning?'暫停':'繼續'; }
+function adjustTimer(s) { timerSeconds=Math.max(10,timerSeconds+s); updateTimerDisplay(); }
+function stopTimer() { clearInterval(timerInterval); document.getElementById('timerBar').style.display='none'; timerRunning=false; }
+function updateTimerDisplay() {
+  const m=Math.floor(timerSeconds/60), s=timerSeconds%60;
+  document.getElementById('timerDisplay').textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+// ===================== NUTRITION =====================
+function renderNutritionPage() {
+  const meals = getTodayMeals();
+  const goals = getNutGoals();
+  const totals = meals.reduce((acc, m) => ({
+    protein: acc.protein + (+m.protein||0),
+    carb: acc.carb + (+m.carb||0),
+    fat: acc.fat + (+m.fat||0),
+    calorie: acc.calorie + ((+m.protein||0)*4 + (+m.carb||0)*4 + (+m.fat||0)*9)
+  }), {protein:0,carb:0,fat:0,calorie:0});
+
+  document.getElementById('nutSummary').innerHTML = [
+    {key:'protein',label:'蛋白質',unit:'g',color:'var(--accent)'},
+    {key:'carb',label:'碳水',unit:'g',color:'var(--blue)'},
+    {key:'fat',label:'脂肪',unit:'g',color:'var(--accent2)'},
+    {key:'calorie',label:'熱量',unit:'kcal',color:'var(--green)'},
+  ].map(n => {
+    const pct = Math.min(100, Math.round((totals[n.key]/(goals[n.key]||1))*100));
+    return `<div class="nut-card">
+      <div class="val" style="color:${n.color}">${Math.round(totals[n.key])}</div>
+      <div class="unit">${n.unit}</div>
+      <div class="lbl">${n.label}</div>
+      <div class="nut-goal-bar"><div class="nut-goal-fill" style="width:${pct}%;background:${n.color}"></div></div>
+      <div style="font-size:10px;color:var(--muted);margin-top:3px">${pct}%</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('mealList').innerHTML = meals.length ? meals.map((m,i) => `
+    <div class="meal-item">
+      <div>
+        <div class="meal-name">${m.name}</div>
+        <div class="meal-macros">蛋白質 ${m.protein}g｜碳水 ${m.carb}g｜脂肪 ${m.fat}g</div>
+      </div>
+      <button class="del-meal" onclick="deleteMeal(${i})">🗑</button>
+    </div>`).join('') : '<div class="empty">今日尚無飲食記錄</div>';
+
+  const g = getNutGoals();
+  ['goalProtein','goalCarb','goalFat','goalCalorie'].forEach((id,i) => {
+    const keys = ['protein','carb','fat','calorie'];
+    document.getElementById(id).value = g[keys[i]] || '';
+  });
+}
+
+function addMeal() {
+  const name = document.getElementById('mealName').value.trim();
+  if (!name) { showToast('請輸入食物名稱'); return; }
+  const meal = {
+    name,
+    protein: document.getElementById('mealProtein').value || 0,
+    carb: document.getElementById('mealCarb').value || 0,
+    fat: document.getElementById('mealFat').value || 0,
+  };
+  const meals = getTodayMeals(); meals.push(meal); saveTodayMeals(meals);
+  ['mealName','mealProtein','mealCarb','mealFat'].forEach(id => document.getElementById(id).value='');
+  renderNutritionPage(); showToast('✓ 已記錄');
+}
+
+function deleteMeal(idx) {
+  const meals = getTodayMeals(); meals.splice(idx,1); saveTodayMeals(meals);
+  renderNutritionPage();
+}
+
+function saveNutGoals() {
+  const goals = {
+    protein: +document.getElementById('goalProtein').value||170,
+    carb: +document.getElementById('goalCarb').value||200,
+    fat: +document.getElementById('goalFat').value||60,
+    calorie: +document.getElementById('goalCalorie').value||2200,
+  };
+  setData('aceNutGoals', goals); renderNutritionPage(); showToast('✓ 目標已儲存');
+}
+
+// ===================== BODY STATS =====================
+function saveBodyStat() {
+  const entry = {
+    date: new Date().toISOString(),
+    weight: document.getElementById('inputWeight').value,
+    bf: document.getElementById('inputBF').value,
+    muscle: document.getElementById('inputMuscle').value,
+    note: document.getElementById('inputBodyNote').value,
+  };
+  if (!entry.weight && !entry.bf) { showToast('請輸入至少一項數據'); return; }
+  const data = getBodyStats(); data.push(entry); setData('aceBody', data);
+  document.getElementById('inputWeight').value='';
+  document.getElementById('inputBF').value='';
+  document.getElementById('inputMuscle').value='';
+  document.getElementById('inputBodyNote').value='';
+  renderBodyPage(); showToast('✓ 體態數據已記錄');
+}
+
+function renderBodyPage() {
+  const data = getBodyStats();
+  const latest = data[data.length-1];
+  const first = data[0];
+  document.getElementById('bodyStatGrid').innerHTML = `
+    <div class="stat-card"><div class="val">${latest?.weight||'--'}</div><div class="lbl">目前體重 kg</div></div>
+    <div class="stat-card"><div class="val">${latest?.bf||'--'}</div><div class="lbl">目前體脂 %</div></div>
+    <div class="stat-card"><div class="val" style="color:${latest&&first&&latest.weight<first.weight?'var(--green)':'var(--accent2)'}">
+      ${latest&&first&&latest.weight&&first.weight ? (+(latest.weight)-+(first.weight)).toFixed(1) : '--'}
+    </div><div class="lbl">體重變化 kg</div></div>
+    <div class="stat-card"><div class="val">${data.length}</div><div class="lbl">記錄次數</div></div>
+  `;
+  const labels = data.slice(-20).map(d => { const dt=new Date(d.date); return `${dt.getMonth()+1}/${dt.getDate()}`; });
+  const weights = data.slice(-20).map(d => +d.weight||null);
+  const bfs = data.slice(-20).map(d => +d.bf||null);
+  const chartOpts = (color) => ({
+    plugins:{legend:{display:false}},
+    scales:{ x:{ticks:{color:'#666',font:{size:10}},grid:{color:'#1e1e1e'}}, y:{ticks:{color:'#666'},grid:{color:'#1e1e1e'}} }
+  });
+  if (weightChart) weightChart.destroy();
+  weightChart = new Chart(document.getElementById('weightChart'), { type:'line', data:{labels, datasets:[{data:weights,borderColor:color='#e8ff47',backgroundColor:'rgba(232,255,71,0.08)',tension:0.3,fill:true,pointBackgroundColor:'#e8ff47',pointRadius:4,spanGaps:true}]}, options:chartOpts('#e8ff47') });
+  if (bfChart) bfChart.destroy();
+  bfChart = new Chart(document.getElementById('bfChart'), { type:'line', data:{labels, datasets:[{data:bfs,borderColor:'#ff6b35',backgroundColor:'rgba(255,107,53,0.08)',tension:0.3,fill:true,pointBackgroundColor:'#ff6b35',pointRadius:4,spanGaps:true}]}, options:chartOpts('#ff6b35') });
+}
+
+// ===================== HYROX =====================
+function renderHyroxPage() {
+  const el = document.getElementById('hyroxStations');
+  el.innerHTML = HYROX_STATIONS.map((s,i) => `
+    <div class="hyrox-station" id="station-${i}">
+      <div class="station-num">${s.num}</div>
+      <div class="station-info">
+        <div class="station-name">${s.work}</div>
+        <div class="station-detail">之前：${s.run}</div>
+      </div>
+      <div class="station-time" id="station-time-${i}">--:--</div>
+    </div>`).join('');
+  renderHyroxHistory();
+}
+
+function hyroxStart() {
+  if (hyroxRunning) {
+    // Mark current station done
+    const timeStr = formatHyroxTime(hyroxStationSeconds);
+    document.getElementById(`station-time-${hyroxCurrentStation}`).textContent = timeStr;
+    document.getElementById(`station-time-${hyroxCurrentStation}`).classList.add('done');
+    hyroxResults[hyroxCurrentStation] = hyroxStationSeconds;
+    hyroxStationSeconds = 0;
+    hyroxCurrentStation++;
+    if (hyroxCurrentStation >= HYROX_STATIONS.length) {
+      hyroxFinish(); return;
+    }
+    document.getElementById('hyroxStartBtn').textContent = `▶ 完成第 ${hyroxCurrentStation+1} 站`;
+    return;
+  }
+  hyroxRunning = true; hyroxTotalSeconds = 0; hyroxStationSeconds = 0; hyroxCurrentStation = 0; hyroxResults = [];
+  document.getElementById('hyroxStartBtn').textContent = `▶ 完成第 1 站`;
+  clearInterval(hyroxInterval);
+  hyroxInterval = setInterval(() => {
+    hyroxTotalSeconds++; hyroxStationSeconds++;
+    document.getElementById('hyroxTotalTime').textContent = formatHyroxTime(hyroxTotalSeconds);
+  }, 1000);
+}
+
+function hyroxFinish() {
+  clearInterval(hyroxInterval); hyroxRunning = false;
+  const records = getData('aceHyrox');
+  records.push({ date: new Date().toISOString(), total: hyroxTotalSeconds, stations: [...hyroxResults] });
+  setData('aceHyrox', records);
+  document.getElementById('hyroxStartBtn').textContent = '▶ 開始計時';
+  showToast(`🏆 完成！總時間 ${formatHyroxTime(hyroxTotalSeconds)}`);
+  renderHyroxHistory();
+}
+
+function hyroxReset() {
+  clearInterval(hyroxInterval); hyroxRunning=false; hyroxTotalSeconds=0; hyroxStationSeconds=0; hyroxCurrentStation=0; hyroxResults=[];
+  document.getElementById('hyroxTotalTime').textContent='00:00:00';
+  document.getElementById('hyroxStartBtn').textContent='▶ 開始計時';
+  HYROX_STATIONS.forEach((_,i) => { document.getElementById(`station-time-${i}`).textContent='--:--'; document.getElementById(`station-time-${i}`).classList.remove('done'); });
+}
+
+function formatHyroxTime(s) { const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60; return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`; }
+
+function renderHyroxHistory() {
+  const records = getData('aceHyrox').slice().reverse().slice(0,5);
+  const el = document.getElementById('hyroxHistory');
+  if (!records.length) { el.innerHTML=''; return; }
+  el.innerHTML = `<div class="section-title" style="margin-top:8px">歷史<span>成績</span></div>` +
+    records.map(r => {
+      const d = new Date(r.date);
+      return `<div class="history-card">
+        <div class="h-date">${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}</div>
+        <div class="h-title" style="color:var(--accent2)">🏆 ${formatHyroxTime(r.total)}</div>
+      </div>`;
+    }).join('');
+}
+
+// ===================== TEMPLATES =====================
+function renderTemplates() {
+  document.getElementById('templateList').innerHTML = TEMPLATES.map((t,ti) => `
+    <div class="template-card">
+      <div class="template-header">
+        <div class="template-title">${t.name}</div>
+        <div class="template-badge">${t.badge}</div>
+      </div>
+      ${t.days.map(d => `<div class="template-day">${d.day}：<span>${d.label}${d.exercises.length?` — ${d.exercises.slice(0,3).join('、')}${d.exercises.length>3?'…':''}`:''}</span></div>`).join('')}
+      <button class="use-template-btn" onclick="useTemplate(${ti})">採用此計畫 →</button>
+    </div>`).join('');
+}
+
+function useTemplate(ti) {
+  const t = TEMPLATES[ti];
+  showToast(`✓ 已採用：${t.name}`);
+  // Switch to record page and show first day's exercises
+  const today = new Date().getDay();
+  const dayMap = [0,1,2,3,4,5,6];
+  const dayIdx = Math.min(today===0?6:today-1, t.days.length-1);
+  const day = t.days[dayIdx];
+  if (day?.exercises?.length) {
+    currentWorkoutExercises = {};
+    day.exercises.forEach(ex => { currentWorkoutExercises[ex] = {sets:[{weight:'',reps:''}]}; });
+    showPage('record', document.querySelector('.nav-btn'));
+    document.querySelector('.nav-btn').classList.add('active');
+    renderWorkoutCards();
+    document.getElementById('currentWorkout').style.display = 'block';
+    showToast(`載入：${day.day} ${day.label}`);
+  }
+}
+
+// ===================== HISTORY =====================
+function renderHistory() {
+  const data = getWorkouts().slice().reverse();
+  const el = document.getElementById('historyList');
+  if (!data.length) { el.innerHTML='<div class="empty">尚無訓練記錄</div>'; return; }
+  el.innerHTML = data.map(w => {
+    const d = new Date(w.date);
+    const exNames = Object.keys(w.exercises);
+    const totalSets = exNames.reduce((a,ex) => a+w.exercises[ex].sets.length, 0);
+    const totalVol = exNames.reduce((a,ex) => a+w.exercises[ex].sets.reduce((s,set) => s+((+set.weight||0)*(+set.reps||0)),0), 0);
+    return `<div class="history-card">
+      <div class="h-date">${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}</div>
+      <div class="h-title">${w.muscles.join(' + ')} 訓練</div>
+      <div class="h-tags">${exNames.map(e=>`<span class="tag">${e}</span>`).join('')}</div>
+      <div class="h-stats"><div class="h-stat">組數 <span>${totalSets}</span></div><div class="h-stat">總容量 <span>${totalVol}kg</span></div></div>
+    </div>`;
+  }).join('');
+}
+
+// ===================== PROGRESS =====================
+function renderProgress() {
+  const data = getWorkouts();
+  const total = data.length;
+  const totalSets = data.reduce((a,w) => a+Object.values(w.exercises).reduce((b,e)=>b+e.sets.length,0),0);
+  const allEx = new Set(data.flatMap(w=>Object.keys(w.exercises)));
+  const thisWeek = data.filter(w => (new Date()-new Date(w.date))/(864e5)<7).length;
+  document.getElementById('statGrid').innerHTML = `
+    <div class="stat-card"><div class="val">${total}</div><div class="lbl">總訓練次數</div></div>
+    <div class="stat-card"><div class="val">${thisWeek}</div><div class="lbl">本週訓練</div></div>
+    <div class="stat-card"><div class="val">${totalSets}</div><div class="lbl">總組數</div></div>
+    <div class="stat-card"><div class="val">${allEx.size}</div><div class="lbl">動作種類</div></div>`;
+
+  const weeks = {};
+  data.forEach(w => { const d=new Date(w.date),wk=`${d.getFullYear()}/W${getWeekNum(d)}`; weeks[wk]=(weeks[wk]||0)+1; });
+  const wLabels = Object.keys(weeks).slice(-8), wVals = wLabels.map(k=>weeks[k]);
+  if (weeklyChart) weeklyChart.destroy();
+  weeklyChart = new Chart(document.getElementById('weeklyChart'), {
+    type:'bar', data:{labels:wLabels, datasets:[{data:wVals,backgroundColor:'#e8ff47',borderRadius:6}]},
+    options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#666',font:{size:10}},grid:{color:'#1e1e1e'}},y:{ticks:{color:'#666',stepSize:1},grid:{color:'#1e1e1e'},beginAtZero:true}}}
+  });
+
+  const sel = document.getElementById('exerciseSelect');
+  sel.innerHTML = '<option>選擇動作</option>' + [...allEx].map(e=>`<option>${e}</option>`).join('');
+  if (allEx.size) { sel.value=[...allEx][0]; updatePRChart(); }
+}
+
+function updatePRChart() {
+  const ex = document.getElementById('exerciseSelect').value;
+  if (!ex || ex==='選擇動作') return;
+  const data = getWorkouts();
+  const pts = [];
+  data.forEach(w => { if(w.exercises[ex]) { const mw=Math.max(...w.exercises[ex].sets.map(s=>+s.weight||0)); if(mw>0){const d=new Date(w.date);pts.push({x:`${d.getMonth()+1}/${d.getDate()}`,y:mw});} } });
+  if (prChart) prChart.destroy();
+  prChart = new Chart(document.getElementById('prChart'), {
+    type:'line', data:{labels:pts.map(p=>p.x), datasets:[{data:pts.map(p=>p.y),borderColor:'#ff6b35',backgroundColor:'rgba(255,107,53,0.1)',tension:0.3,fill:true,pointBackgroundColor:'#ff6b35',pointRadius:5}]},
+    options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#666'},grid:{color:'#1e1e1e'}},y:{ticks:{color:'#666'},grid:{color:'#1e1e1e'}}}}
+  });
+}
+
+function getWeekNum(d) { const s=new Date(d.getFullYear(),0,1); return Math.ceil(((d-s)/864e5+s.getDay()+1)/7); }
+
+// ===================== UTILS =====================
+function showToast(msg) {
+  const t = document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+function updateStreak() {
+  const data = getWorkouts();
+  const days = new Set(data.map(w=>new Date(w.date).toDateString()));
+  let streak=0; const d=new Date();
+  while(days.has(d.toDateString())){streak++;d.setDate(d.getDate()-1);}
+  document.getElementById('streakBadge').textContent=`🔥 ${streak}天`;
+}
+
+// ===================== INIT =====================
+initMuscleGrid();
+updateStreak();
+</script>
+
+<style>
+.install-banner {
+  display: none; position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px; background: #1a1a1a;
+  border-top: 2px solid #e8ff47; padding: 14px 20px;
+  flex-direction: column; gap: 10px; z-index: 300;
+}
+.install-banner p { font-size: 13px; color: #f0f0f0; }
+.install-banner p span { color: #e8ff47; font-weight: 700; }
+.install-banner-btns { display: flex; gap: 10px; }
+.install-btn { flex: 1; padding: 11px; background: #e8ff47; color: #000; border: none; border-radius: 10px; font-family: "Noto Sans TC"; font-size: 14px; font-weight: 700; cursor: pointer; }
+.install-dismiss { flex: 1; padding: 11px; background: none; border: 1px solid #2e2e2e; color: #666; border-radius: 10px; font-family: "Noto Sans TC"; font-size: 14px; cursor: pointer; }
+</style>
+<div class="install-banner" id="installBanner">
+  <p>📲 加入主畫面，像 <span>App</span> 一樣使用</p>
+  <div class="install-banner-btns">
+    <button class="install-btn" onclick="installApp()">安裝到主畫面</button>
+    <button class="install-dismiss" onclick="document.getElementById('installBanner').style.display='none'">稍後再說</button>
+  </div>
+</div>
+
+<script>
+// Service Worker 註冊
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      console.log('SW registered');
+    }).catch(err => console.log('SW error:', err));
+  });
+}
+
+// 安裝提示
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBanner').style.display = 'flex';
+});
+
+function installApp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => {
+      deferredPrompt = null;
+      document.getElementById('installBanner').style.display = 'none';
+    });
+  }
+}
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('installBanner').style.display = 'none';
+});
+</script>
+</body>
+</html>
