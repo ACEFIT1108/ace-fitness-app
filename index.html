@@ -76,6 +76,19 @@ button { cursor: pointer; }
 .add-set-btn:hover { border-color: var(--accent); color: var(--accent); }
 .finish-btn { width: 100%; padding: 15px; background: var(--accent); color: #000; border: none; border-radius: 14px; font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; margin-top: 4px; }
 
+/* WORKOUT NOTE */
+.workout-note { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 10px; font-family: 'Noto Sans TC'; font-size: 13px; resize: none; margin-top: 10px; min-height: 70px; }
+.workout-note:focus { outline: none; border-color: var(--accent); }
+.note-label { font-size: 11px; color: var(--muted); letter-spacing: 1px; margin-top: 10px; margin-bottom: 4px; }
+
+/* SHARE MODAL */
+.share-modal { background: var(--surface); border-radius: 20px 20px 0 0; padding: 20px; width: 100%; max-width: 480px; }
+.share-canvas-wrap { background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 14px; display: flex; justify-content: center; }
+.share-btns { display: flex; gap: 10px; }
+.share-btn { flex: 1; padding: 12px; border: none; border-radius: 10px; font-family: 'Noto Sans TC'; font-size: 14px; font-weight: 700; cursor: pointer; }
+.share-btn.primary { background: var(--accent); color: #000; }
+.share-btn.secondary { background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
+
 /* TIMER BAR */
 .timer-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: var(--surface); border-top: 2px solid var(--accent); padding: 10px 16px; display: flex; align-items: center; gap: 10px; z-index: 100; }
 .timer-display { font-family: 'Bebas Neue', sans-serif; font-size: 30px; color: var(--accent); min-width: 76px; }
@@ -201,7 +214,9 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 14px 0; 
     <hr class="divider">
     <div class="section-title">今日<span>訓練</span></div>
     <div id="workoutCards"></div>
-    <button class="finish-btn" onclick="finishWorkout()">✓ 完成訓練</button>
+    <div class="note-label">📝 訓練筆記</div>
+    <textarea class="workout-note" id="workoutNote" placeholder="記錄今日感受、重量突破、身體狀況..."></textarea>
+    <button class="finish-btn" onclick="finishWorkout()" style="margin-top:10px">✓ 完成訓練</button>
   </div>
 </div>
 
@@ -509,16 +524,20 @@ function finishWorkout() {
   const muscles = [...new Set(Object.keys(currentWorkoutExercises).map(ex => {
     return Object.entries(BASE_EXERCISES).find(([m,exs]) => exs.includes(ex))?.[0] || currentMuscle || '其他';
   }))];
+  const note = document.getElementById('workoutNote').value.trim();
+  const workout = { date: new Date().toISOString(), muscles, exercises: JSON.parse(JSON.stringify(currentWorkoutExercises)), note };
   const data = getWorkouts();
-  data.push({ date: new Date().toISOString(), muscles, exercises: JSON.parse(JSON.stringify(currentWorkoutExercises)) });
+  data.push(workout);
   setData('aceWorkouts', data);
+  // Show share modal before clearing
+  showShareModal(workout);
   currentWorkoutExercises = {};
   document.getElementById('workoutCards').innerHTML = '';
   document.getElementById('currentWorkout').style.display = 'none';
   document.getElementById('exerciseSection').style.display = 'none';
+  document.getElementById('workoutNote').value = '';
   document.querySelectorAll('.muscle-btn').forEach(b => b.classList.remove('active'));
   updateStreak(); stopTimer();
-  showToast('✓ 訓練已記錄！');
 }
 
 // ===================== CUSTOM EXERCISE =====================
@@ -791,6 +810,7 @@ function renderHistory() {
       <div class="h-title">${w.muscles.join(' + ')} 訓練</div>
       <div class="h-tags">${exNames.map(e=>`<span class="tag">${e}</span>`).join('')}</div>
       <div class="h-stats"><div class="h-stat">組數 <span>${totalSets}</span></div><div class="h-stat">總容量 <span>${totalVol}kg</span></div></div>
+      ${w.note ? `<div style="font-size:12px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">📝 ${w.note}</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -853,31 +873,147 @@ function updateStreak() {
 // ===================== INIT =====================
 initMuscleGrid();
 updateStreak();
-</script>
 
-<style>
-.install-banner {
-  display: none; position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
-  width: 100%; max-width: 480px; background: #1a1a1a;
-  border-top: 2px solid #e8ff47; padding: 14px 20px;
-  flex-direction: column; gap: 10px; z-index: 300;
+// ===================== SHARE IMAGE =====================
+function showShareModal(workout) {
+  document.getElementById('shareModal').style.display = 'flex';
+  setTimeout(() => drawShareCanvas(workout), 100);
 }
-.install-banner p { font-size: 13px; color: #f0f0f0; }
-.install-banner p span { color: #e8ff47; font-weight: 700; }
-.install-banner-btns { display: flex; gap: 10px; }
-.install-btn { flex: 1; padding: 11px; background: #e8ff47; color: #000; border: none; border-radius: 10px; font-family: "Noto Sans TC"; font-size: 14px; font-weight: 700; cursor: pointer; }
-.install-dismiss { flex: 1; padding: 11px; background: none; border: 1px solid #2e2e2e; color: #666; border-radius: 10px; font-family: "Noto Sans TC"; font-size: 14px; cursor: pointer; }
-</style>
-<div class="install-banner" id="installBanner">
-  <p>📲 加入主畫面，像 <span>App</span> 一樣使用</p>
-  <div class="install-banner-btns">
-    <button class="install-btn" onclick="installApp()">安裝到主畫面</button>
-    <button class="install-dismiss" onclick="document.getElementById('installBanner').style.display='none'">稍後再說</button>
-  </div>
-</div>
+function closeShareModal() {
+  document.getElementById('shareModal').style.display = 'none';
+  showToast('✓ 訓練已記錄！');
+}
+function drawShareCanvas(workout) {
+  const canvas = document.getElementById('shareCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = 480, H = 480;
+  canvas.width = W; canvas.height = H;
 
-<script>
-// Service Worker 註冊
+  // Background
+  ctx.fillStyle = '#0f0f0f';
+  ctx.fillRect(0, 0, W, H);
+
+  // Accent top bar
+  ctx.fillStyle = '#e8ff47';
+  ctx.fillRect(0, 0, W, 6);
+
+  // Grid lines decoration
+  ctx.strokeStyle = '#1a1a1a';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < W; i += 40) {
+    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(W, i); ctx.stroke();
+  }
+
+  // Logo
+  ctx.font = 'bold 48px Arial Black, sans-serif';
+  ctx.fillStyle = '#e8ff47';
+  ctx.fillText('ACE', 32, 72);
+  ctx.font = '14px sans-serif';
+  ctx.fillStyle = '#444';
+  ctx.fillText('TRAINING LOG', 32, 92);
+
+  // Date
+  const d = new Date(workout.date);
+  const dateStr = `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+  ctx.font = '13px sans-serif';
+  ctx.fillStyle = '#555';
+  ctx.textAlign = 'right';
+  ctx.fillText(dateStr, W - 32, 72);
+  ctx.textAlign = 'left';
+
+  // Muscle title
+  ctx.font = 'bold 32px Arial, sans-serif';
+  ctx.fillStyle = '#f0f0f0';
+  ctx.fillText(workout.muscles.join(' + '), 32, 140);
+
+  // Divider
+  ctx.strokeStyle = '#2e2e2e';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(32, 155); ctx.lineTo(W-32, 155); ctx.stroke();
+
+  // Exercise list
+  const exNames = Object.keys(workout.exercises);
+  let y = 185;
+  exNames.slice(0, 6).forEach((name, i) => {
+    const ex = workout.exercises[name];
+    const sets = ex.sets.filter(s => s.weight || s.reps);
+    const maxW = Math.max(...sets.map(s => +s.weight || 0));
+    const totalSets = sets.length;
+
+    // Exercise name
+    ctx.font = 'bold 15px sans-serif';
+    ctx.fillStyle = '#f0f0f0';
+    ctx.fillText(name, 32, y);
+
+    // Stats
+    ctx.font = '13px sans-serif';
+    ctx.fillStyle = '#666';
+    const statStr = `${totalSets} 組${maxW > 0 ? `  ·  最重 ${maxW}kg` : ''}`;
+    ctx.fillText(statStr, 32, y + 18);
+
+    // Accent dot
+    ctx.fillStyle = '#e8ff47';
+    ctx.beginPath();
+    ctx.arc(W - 40, y - 2, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    y += 48;
+    if (y > 390) return;
+  });
+
+  // Note
+  if (workout.note) {
+    ctx.strokeStyle = '#2e2e2e';
+    ctx.beginPath(); ctx.moveTo(32, y - 8); ctx.lineTo(W-32, y - 8); ctx.stroke();
+    ctx.font = 'italic 13px sans-serif';
+    ctx.fillStyle = '#555';
+    const note = workout.note.length > 55 ? workout.note.slice(0, 55) + '…' : workout.note;
+    ctx.fillText(`"${note}"`, 32, y + 10);
+    y += 34;
+  }
+
+  // Stats summary bar
+  const totalSets2 = exNames.reduce((a, ex) => a + workout.exercises[ex].sets.length, 0);
+  const totalVol = exNames.reduce((a, ex) => a + workout.exercises[ex].sets.reduce((s, set) => s + ((+set.weight||0)*(+set.reps||0)), 0), 0);
+
+  ctx.fillStyle = '#1a1a1a';
+  ctx.beginPath();
+  ctx.roundRect(32, H - 80, W - 64, 50, 10);
+  ctx.fill();
+
+  ctx.font = 'bold 22px Arial, sans-serif';
+  ctx.fillStyle = '#e8ff47';
+  ctx.textAlign = 'center';
+  ctx.fillText(`${totalSets2} 組`, W * 0.25, H - 47);
+  ctx.fillText(`${totalVol}kg`, W * 0.75, H - 47);
+  ctx.font = '11px sans-serif';
+  ctx.fillStyle = '#555';
+  ctx.fillText('總組數', W * 0.25, H - 34);
+  ctx.fillText('總容量', W * 0.75, H - 34);
+
+  // Center divider in stat bar
+  ctx.strokeStyle = '#2e2e2e';
+  ctx.beginPath(); ctx.moveTo(W/2, H - 72); ctx.lineTo(W/2, H - 30); ctx.stroke();
+  ctx.textAlign = 'left';
+
+  // Bottom watermark
+  ctx.font = '11px sans-serif';
+  ctx.fillStyle = '#333';
+  ctx.textAlign = 'right';
+  ctx.fillText('ace-fitness-app.vercel.app', W - 32, H - 10);
+  ctx.textAlign = 'left';
+}
+
+function downloadShareImage() {
+  const canvas = document.getElementById('shareCanvas');
+  const link = document.createElement('a');
+  link.download = `ACE訓練_${new Date().toISOString().slice(0,10)}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+  showToast('✓ 圖片已儲存！');
+}
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js').then(reg => {
@@ -907,6 +1043,47 @@ function installApp() {
 window.addEventListener('appinstalled', () => {
   document.getElementById('installBanner').style.display = 'none';
 });
+
 </script>
+
+
+<!-- SHARE MODAL -->
+<div class="modal-overlay" id="shareModal" style="display:none" onclick="if(event.target===this)closeShareModal()">
+  <div class="share-modal">
+    <button class="modal-close" onclick="closeShareModal()" style="float:right;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">✕</button>
+    <div class="modal-title" style="font-size:15px;font-weight:700;margin-bottom:14px">🎉 訓練完成！分享到 IG/Threads</div>
+    <div class="share-canvas-wrap">
+      <canvas id="shareCanvas" width="480" height="480" style="max-width:100%;display:block"></canvas>
+    </div>
+    <div class="share-btns">
+      <button class="share-btn primary" onclick="downloadShareImage()">⬇ 儲存圖片</button>
+      <button class="share-btn secondary" onclick="closeShareModal()">稍後再說</button>
+    </div>
+  </div>
+</div>
+
+<style>
+.install-banner {
+  display: none; position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px; background: #1a1a1a;
+  border-top: 2px solid #e8ff47; padding: 14px 20px;
+  flex-direction: column; gap: 10px; z-index: 300;
+}
+.install-banner p { font-size: 13px; color: #f0f0f0; }
+.install-banner p span { color: #e8ff47; font-weight: 700; }
+.install-banner-btns { display: flex; gap: 10px; }
+.install-btn { flex: 1; padding: 11px; background: #e8ff47; color: #000; border: none; border-radius: 10px; font-family: "Noto Sans TC"; font-size: 14px; font-weight: 700; cursor: pointer; }
+.install-dismiss { flex: 1; padding: 11px; background: none; border: 1px solid #2e2e2e; color: #666; border-radius: 10px; font-family: "Noto Sans TC"; font-size: 14px; cursor: pointer; }
+</style>
+<div class="install-banner" id="installBanner">
+  <p>📲 加入主畫面，像 <span>App</span> 一樣使用</p>
+  <div class="install-banner-btns">
+    <button class="install-btn" onclick="installApp()">安裝到主畫面</button>
+    <button class="install-dismiss" onclick="document.getElementById('installBanner').style.display='none'">稍後再說</button>
+  </div>
+</div>
+
+
+
 </body>
 </html>
