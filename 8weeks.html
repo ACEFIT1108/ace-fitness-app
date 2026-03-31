@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ACE 教練 - 8週線上減重陪跑方案</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+      color: #333;
+      line-height: 1.6;
+      background: #f8f9fa;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* 導覽列 */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: white;
+      border-bottom: 1px solid #e5e5e5;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    nav .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 60px;
+    }
+
+    .logo {
+      font-size: 20px;
+      font-weight: 600;
+      color: #1e5ba8;
+    }
+
+    nav ul {
+      display: flex;
+      gap: 30px;
+      align-items: center;
+      list-style: none;
+    }
+
+    nav a {
+      color: #333;
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.3s;
+    }
+
+    nav a:hover {
+      color: #1e5ba8;
+    }
+
+    .btn {
+      padding: 10px 24px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.3s;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-primary {
+      background: #1e5ba8;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #154a8a;
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background: white;
+      color: #1e5ba8;
+      border: 1px solid #1e5ba8;
+    }
+
+    .btn-secondary:hover {
+      background: #f0f7ff;
+    }
+
+    .btn-large {
+      padding: 14px 28px;
+      font-size: 16px;
+    }
+
+    /* 英雄區 */
+    .hero {
+      background: linear-gradient(135deg, white 0%, #f0f7ff 50%, white 100%);
+      padding: 60px 20px;
+    }
+
+    .hero .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: center;
+    }
+
+    .hero-content h1 {
+      font-size: 48px;
+      font-weight: 700;
+      margin: 20px 0;
+      line-height: 1.2;
+    }
+
+    .hero-content h1 span {
+      color: #1e5ba8;
+    }
+
+    .hero-subtitle {
+      font-size: 12px;
+      font-weight: 600;
+      color: #1e5ba8;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .hero-desc {
+      font-size: 16px;
+      color: #666;
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 40px;
+    }
+
+    .stat {
+      flex: 1;
+    }
+
+    .stat-number {
+      font-size: 32px;
+      font-weight: 700;
+      color: #1e5ba8;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #999;
+      margin-top: 4px;
+    }
+
+    .hero-image {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ccc;
+      font-size: 14px;
+    }
+
+    /* 失敗原因 */
+    .failures {
+      background: white;
+      padding: 60px 20px;
+    }
+
+    .section-title {
+      font-size: 36px;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .section-desc {
+      font-size: 16px;
+      color: #666;
+      text-align: center;
+      margin-bottom: 50px;
+    }
+
+    .failures-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    .failure-card {
+      background: #fef2f2;
+      border-radius: 8px;
+      padding: 24px;
+      border-left: 4px solid #e24b4a;
+    }
+
+    .failure-card h3 {
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #333;
+    }
+
+    .failure-card p {
+      font-size: 14px;
+      color: #666;
+    }
+
+    /* 陪伴對比 */
+    .comparison {
+      background: #f8f9fa;
+      padding: 60px 20px;
+    }
+
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+    }
+
+    .comparison-card {
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+      border: 2px solid;
+    }
+
+    .comparison-card.bad {
+      border-color: #e24b4a;
+    }
+
+    .comparison-card.good {
+      border-color: #16a34a;
+    }
+
+    .comparison-card h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+
+    .comparison-card.bad h3 {
+      color: #e24b4a;
+    }
+
+    .comparison-card.good h3 {
+      color: #16a34a;
+    }
+
+    .comparison-card ul {
+      list-style: none;
+    }
+
+    .comparison-card li {
+      padding: 10px 0;
+      font-size: 14px;
+      color: #666;
+      border-bottom: 1px solid #eee;
+    }
+
+    .comparison-card li:last-child {
+      border-bottom: none;
+    }
+
+    /* 8週方案 */
+    .program {
+      background: white;
+      padding: 60px 20px;
+    }
+
+    .program-phase {
+      background: #f0f7ff;
+      border-radius: 8px;
+      padding: 30px;
+      margin-bottom: 24px;
+    }
+
+    .program-phase h4 {
+      font-weight: 600;
+      color: #1e5ba8;
+      margin-bottom: 12px;
+    }
+
+    .program-phase ul {
+      list-style: none;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .program-phase li {
+      padding: 6px 0;
+    }
+
+    .program-outcome {
+      margin-top: 12px;
+      padding: 10px;
+      background: white;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #1e5ba8;
+    }
+
+    .price-section {
+      text-align: center;
+      margin: 50px 0;
+    }
+
+    .price-label {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 16px;
+    }
+
+    .price {
+      font-size: 48px;
+      font-weight: 700;
+      color: #1e5ba8;
+      margin-bottom: 16px;
+    }
+
+    .price-desc {
+      font-size: 14px;
+      color: #999;
+      margin-bottom: 30px;
+    }
+
+    /* 陪伴方式 */
+    .support {
+      background: #f8f9fa;
+      padding: 60px 20px;
+    }
+
+    .support-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .support-card {
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+    }
+
+    .support-card h3 {
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #1e5ba8;
+    }
+
+    .support-card p {
+      font-size: 14px;
+      color: #666;
+    }
+
+    /* 常見問題 */
+    .faq {
+      background: white;
+      padding: 60px 20px;
+    }
+
+    .faq .container {
+      max-width: 900px;
+    }
+
+    .faq-item {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+      border: 0.5px solid #e5e5e5;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .faq-item:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .faq-question {
+      font-weight: 500;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .faq-toggle {
+      color: #1e5ba8;
+      font-weight: 600;
+    }
+
+    .faq-answer {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #eee;
+      font-size: 14px;
+      color: #666;
+      line-height: 1.6;
+      display: none;
+    }
+
+    .faq-answer.active {
+      display: block;
+    }
+
+    /* 人設信任 */
+    .trust {
+      background: #f8f9fa;
+      padding: 60px 20px;
+    }
+
+    .trust .container {
+      max-width: 900px;
+    }
+
+    .trust-card {
+      background: #f0f7ff;
+      border-radius: 8px;
+      padding: 40px;
+    }
+
+    .trust-item {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 32px;
+      align-items: flex-start;
+    }
+
+    .trust-number {
+      font-size: 48px;
+      font-weight: 700;
+      color: #1e5ba8;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+
+    .trust-content h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .trust-content p {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.6;
+    }
+
+    .trust-divider {
+      border-top: 1px solid #ddd;
+      padding-top: 32px;
+      margin-bottom: 0;
+    }
+
+    .quote {
+      font-size: 20px;
+      font-style: italic;
+      color: #333;
+      margin: 16px 0;
+      padding-left: 20px;
+      border-left: 4px solid #1e5ba8;
+    }
+
+    /* 適合度篩選 */
+    .screening {
+      background: white;
+      padding: 60px 20px;
+    }
+
+    .screening .container {
+      max-width: 900px;
+    }
+
+    .screening-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+    }
+
+    .screening-card {
+      border-radius: 8px;
+      padding: 24px;
+      border: 2px solid;
+    }
+
+    .screening-card.good {
+      background: #f0fdf4;
+      border-color: #16a34a;
+    }
+
+    .screening-card.bad {
+      background: #fef2f2;
+      border-color: #e24b4a;
+    }
+
+    .screening-card h3 {
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .screening-card.good h3 {
+      color: #16a34a;
+    }
+
+    .screening-card.bad h3 {
+      color: #e24b4a;
+    }
+
+    .screening-card ul {
+      list-style: none;
+      font-size: 14px;
+    }
+
+    .screening-card li {
+      padding: 8px 0;
+      color: #333;
+    }
+
+    /* CTA 區塊 */
+    .cta {
+      background: linear-gradient(135deg, #1e5ba8 0%, #154a8a 100%);
+      color: white;
+      padding: 60px 20px;
+      text-align: center;
+    }
+
+    .cta h2 {
+      font-size: 40px;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+
+    .cta p {
+      font-size: 16px;
+      margin-bottom: 40px;
+      opacity: 0.9;
+    }
+
+    .cta-buttons {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+
+    .btn-white {
+      background: white;
+      color: #1e5ba8;
+    }
+
+    .btn-white:hover {
+      background: #f0f7ff;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: white;
+      border: 2px solid white;
+    }
+
+    .btn-outline:hover {
+      background: rgba(255,255,255,0.1);
+    }
+
+    .cta-footer {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    /* 頁尾 */
+    footer {
+      background: #1a1a1a;
+      color: white;
+      padding: 40px 20px;
+    }
+
+    footer .container {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 40px;
+      margin-bottom: 40px;
+      font-size: 14px;
+    }
+
+    footer h4 {
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    footer p, footer div {
+      opacity: 0.7;
+      line-height: 1.8;
+      margin: 0;
+    }
+
+    .footer-divider {
+      border-top: 1px solid rgba(255,255,255,0.1);
+      padding-top: 20px;
+      text-align: center;
+      opacity: 0.5;
+      font-size: 12px;
+    }
+
+    /* 響應式設計 */
+    @media (max-width: 768px) {
+      nav ul {
+        gap: 16px;
+        font-size: 12px;
+      }
+
+      .hero .container {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-content h1 {
+        font-size: 32px;
+      }
+
+      .hero-image {
+        height: 200px;
+      }
+
+      .failures-grid,
+      .comparison-grid,
+      .support-grid,
+      .screening-grid {
+        grid-template-columns: 1fr;
+      }
+
+      /* 方案卡片手機優化 */
+      div[style*="grid-template-columns: repeat(3, 1fr)"] {
+        grid-template-columns: 1fr !important;
+      }
+
+      /* 移除方案B的放大效果 */
+      div[style*="transform: scale(1.05)"] {
+        transform: scale(1) !important;
+      }
+
+      /* 增加卡片內容的間距和字體 */
+      .program-phase {
+        padding: 20px !important;
+        margin-bottom: 20px !important;
+      }
+
+      .program-phase h4 {
+        font-size: 16px !important;
+        margin-bottom: 12px !important;
+      }
+
+      .program-phase ul li {
+        font-size: 15px !important;
+        padding: 8px 0 !important;
+      }
+
+      .program-phase p {
+        font-size: 13px !important;
+      }
+
+      /* FAQ 手機優化 */
+      .faq-question {
+        font-size: 15px !important;
+        padding: 16px !important;
+      }
+
+      .faq-answer {
+        font-size: 14px !important;
+        padding: 12px !important;
+        line-height: 1.8 !important;
+      }
+
+      footer .container {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .cta-buttons {
+        flex-direction: column;
+      }
+
+      .cta h2 {
+        font-size: 28px;
+      }
+    }
+
+    /* 超小螢幕優化（手機） */
+    @media (max-width: 480px) {
+      body {
+        font-size: 15px;
+      }
+
+      .section-title {
+        font-size: 24px !important;
+      }
+
+      .section-desc {
+        font-size: 14px !important;
+      }
+
+      /* 方案卡片內容優化 */
+      div[style*="padding: 28px"] {
+        padding: 20px !important;
+      }
+
+      div[style*="font-size: 12px; color: #666"] {
+        font-size: 14px !important;
+        line-height: 2 !important;
+      }
+
+      div[style*="font-size: 13px"] {
+        font-size: 14px !important;
+        line-height: 1.8 !important;
+      }
+
+      .price {
+        font-size: 36px !important;
+      }
+
+      /* 按鈕優化 */
+      .btn {
+        padding: 12px 16px !important;
+        font-size: 14px !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 導覽列 -->
+  <nav>
+    <div class="container">
+      <div class="logo">ACE 教練</div>
+      <ul>
+        <li><a href="#why">為什麼</a></li>
+        <li><a href="#program">8週方案</a></li>
+        <li><a href="#faq">常見問題</a></li>
+        <li><a href="https://line.me/ti/p/@xne2322x" target="_blank" class="btn btn-primary">申請評估</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- 英雄區 -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-subtitle">為什麼努力還是沒效果？</div>
+        <h1>努力訓練 3 個月，<span>體重還是沒變？</span></h1>
+        <p class="hero-desc">問題不在你，而在方法。大多數人失敗，不是缺乏努力，而是缺少正確的指導和持續的陪伴。我用科學訓練＋飲食策略＋全程陪伴，幫助你在 8 週內看見明顯改變。</p>
+        <div class="btn-group">
+          <a href="https://line.me/ti/p/@xne2322x" target="_blank" class="btn btn-primary btn-large">申請免費 15 分鐘評估 →</a>
+          <button class="btn btn-secondary btn-large">詳細了解</button>
+        </div>
+        <div class="hero-stats">
+          <div class="stat">
+            <div class="stat-number">300+</div>
+            <div class="stat-label">學員轉變</div>
+          </div>
+          <div class="stat">
+            <div class="stat-number">10+</div>
+            <div class="stat-label">年經驗</div>
+          </div>
+          <div class="stat">
+            <div class="stat-number">-6kg</div>
+            <div class="stat-label">個人進度</div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-image"><img src="ace-chibi.jpg" alt="ACE 教練 Q版" style="width: 100%; height: 100%; object-fit: contain;"></div>
+    </div>
+  </section>
+
+  <!-- 失敗原因 -->
+  <section id="why" class="failures">
+    <div class="container">
+      <h2 class="section-title">大多數人減重失敗的原因</h2>
+      <p class="section-desc">這 5 個陷阱，你可能已經掉進去了</p>
+      <div class="failures-grid">
+        <div class="failure-card">
+          <h3>只重訓練不管飲食</h3>
+          <p>訓練再硬，吃錯了也白搭。熱量赤字才是減脂的第一法則。</p>
+        </div>
+        <div class="failure-card">
+          <h3>飲食過度限制</h3>
+          <p>瘋狂節食 3 週，卻在第 4 週暴吃三倍。極端不可持續。</p>
+        </div>
+        <div class="failure-card">
+          <h3>沒人追蹤進度</h3>
+          <p>自己訓練自己練，沒數據沒反饋，根本不知道有沒有進步。</p>
+        </div>
+        <div class="failure-card">
+          <h3>中途沒人陪伴</h3>
+          <p>遇到瓶頸期就放棄。一個人撐不住，需要有人推你一把。</p>
+        </div>
+        <div class="failure-card">
+          <h3>目標設定不對</h3>
+          <p>追求體重數字，忽視體態。掉肌肉減脂肪的悲劇經常上演。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 陪伴對比 -->
+  <section class="comparison">
+    <div class="container">
+      <h2 class="section-title">不是方法，是「陪你完成目標的人」</h2>
+      <p class="section-desc">大多數教練給課表就放生，我的方式完全不同</p>
+      <div class="comparison-grid">
+        <div class="comparison-card bad">
+          <h3>❌ 放生式教練</h3>
+          <ul>
+            <li>給你課表就沒了</li>
+            <li>問題沒人回</li>
+            <li>沒有進度追蹤</li>
+            <li>不知道該吃什麼</li>
+            <li>遇到挫折自己扛</li>
+          </ul>
+        </div>
+        <div class="comparison-card good">
+          <h3>✓ ACE 陪伴式教練</h3>
+          <ul>
+            <li>週週調整課表</li>
+            <li>24 小時內回覆</li>
+            <li>每週數據評估</li>
+            <li>飲食指導 + 外食策略</li>
+            <li>困難時有人推你</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8週方案 -->
+  <section id="program" class="program">
+    <div class="container">
+      <h2 class="section-title">8 週線上自然減重・教練陪跑方案</h2>
+      <p class="section-desc">3 個方案，選擇最適合你的</p>
+
+      <!-- 方案對比卡片 -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 50px;">
+        
+        <!-- 方案 A -->
+        <div style="background: white; border-radius: 8px; padding: 28px; border: 1px solid #ddd; position: relative;">
+          <div style="font-size: 14px; font-weight: 600; color: #1e5ba8; margin-bottom: 12px;">🔹 方案 A</div>
+          <h3 style="font-size: 20px; font-weight: 700; margin: 0 0 12px 0; color: #333;">入門基礎版</h3>
+          <p style="font-size: 13px; color: #999; margin: 0 0 20px 0;">想先試試看、或預算考量的人</p>
+          
+          <div style="margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid #eee;">
+            <p style="font-size: 12px; color: #666; margin: 0; line-height: 1.8;">
+              ✅ LINE 每日簡單回報（飲食／活動量／作息）<br/>
+              ✅ 教練每日判斷狀態，主動提醒與調整<br/>
+              ✅ 不強制運動、不規定課表<br/>
+              ✅ 依狀態補訓練建議或影片
+            </p>
+          </div>
+          
+          <div style="margin-bottom: 20px; padding: 12px; background: #f0f7ff; border-radius: 6px; font-size: 12px; color: #666; line-height: 1.6;">
+            這是最輕鬆的起點，沒有壓力、沒有硬性規定。跑的過程中如果想要教練直接看到你的飲食數據、給你即時回饋，隨時可以升級方案 B，多 NT$3,000。
+          </div>
+          
+          <div style="text-align: center;">
+            <div style="font-size: 24px; font-weight: 700; color: #1e5ba8; margin-bottom: 4px;">NT$10,800</div>
+            <div style="font-size: 12px; color: #999; margin-bottom: 20px;">8 週</div>
+            <button class="btn btn-secondary" style="width: 100%;">了解方案 A</button>
+          </div>
+        </div>
+
+        <!-- 方案 B (最多人選) -->
+        <div style="background: linear-gradient(135deg, #f0f7ff 0%, white 100%); border-radius: 8px; padding: 28px; border: 2px solid #1e5ba8; position: relative; transform: scale(1.05);">
+          <div style="position: absolute; top: -12px; right: 20px; background: #1e5ba8; color: white; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;">⭐ 最多人選</div>
+          
+          <div style="font-size: 14px; font-weight: 600; color: #1e5ba8; margin-bottom: 12px;">🔹 方案 B</div>
+          <h3 style="font-size: 20px; font-weight: 700; margin: 0 0 12px 0; color: #333;">陪跑＋工具全配</h3>
+          <p style="font-size: 13px; color: #999; margin: 0 0 20px 0;">想讓過程更順、減少卡關的人</p>
+          
+          <div style="margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid #ddd;">
+            <p style="font-size: 12px; color: #666; margin: 0; line-height: 1.8;">
+              ✅ 含方案 A 全部內容<br/>
+              ➕ 搭配 Tegreen 綠茶萃取（120 顆）<br/>
+              ➕ 專屬 ACE 健康管理 App 帳號<br/>
+              ➕ AI 拍照飲食分析，教練即時看到數據<br/>
+              ➕ 教練每週在 App 上給個人化回饋
+            </p>
+          </div>
+
+          <div style="margin-bottom: 20px; padding: 12px; background: white; border-radius: 6px; font-size: 12px; color: #666; line-height: 1.6; border: 1px solid #ddd;">
+            比方案 A 多 NT$3,000，但多了綠茶 + App 追蹤工具 + 教練數據回饋。整個過程你不是自己在撐，教練看得到你每天吃什麼、體重怎麼走。
+          </div>
+        </div>
+
+        <!-- 方案 C -->
+        <div style="background: white; border-radius: 8px; padding: 28px; border: 1px solid #ddd; position: relative;">
+          <div style="font-size: 14px; font-weight: 600; color: #e24b4a; margin-bottom: 12px;">🔸 方案 C</div>
+          <h3 style="font-size: 20px; font-weight: 700; margin: 0 0 12px 0; color: #333;">陪跑＋代謝三寶</h3>
+          <p style="font-size: 13px; color: #999; margin: 0 0 20px 0;">想認真衝、8 週成效最大化的人</p>
+          
+          <div style="margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid #eee;">
+            <p style="font-size: 12px; color: #666; margin: 0; line-height: 1.8;">
+              ✅ 含方案 A 全部內容<br/>
+              ✅ 含 ACE 健康管理 App 帳號（方案 B 所有工具）<br/>
+              ➕ 搭配如新綠纖紫好燃組<br/>
+              ➕ 代謝丸×2 ＋綠茶菁萃膠囊×2 ＋纖燃脂丸×4<br/>
+              ➕ 完整 8 週代謝全面支持
+            </p>
+          </div>
+
+          <div style="margin-bottom: 20px; padding: 12px; background: white; border-radius: 6px; font-size: 12px; color: #666; line-height: 1.6; border: 1px solid #ddd;">
+            這個方案是給真的想認真做的人。產品 + App 工具 + 教練全程陪，8 週之後你不只是瘦，而是整個代謝跟體質都調整過了。
+          </div>
+
+          <div style="text-align: center;">
+            <div style="font-size: 24px; font-weight: 700; color: #e24b4a; margin-bottom: 8px;">NT$29,800</div>
+            <div style="font-size: 12px; color: #999; margin-bottom: 12px;">8 週</div>
+            <div style="background: #f0f7ff; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 11px; color: #666;">
+              💳 刷卡 6 期：每月約 NT$4,967<br/>
+              📱 無卡 24 期：每月約 NT$1,242
+            </div>
+            <button class="btn btn-secondary" style="width: 100%;">了解方案 C</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 方案說明 -->
+      <div style="background: #f0f7ff; border-radius: 8px; padding: 24px; margin-bottom: 40px;">
+        <h3 style="margin: 0 0 16px 0; color: #1e5ba8;">📌 不確定選哪個？</h3>
+        <p style="margin: 0; font-size: 14px; color: #666; line-height: 1.8;">
+          可以先從 A 進來，跑的過程中再決定要不要升級，完全沒有壓力。<br/>
+          <strong>但老實說——大多數人認真想了之後都會選 B，</strong><br/>
+          因為那 NT$3,000 的差距，換來的是整個過程順很多。想直接諮詢？<a href="https://line.me/ti/p/@xne2322x" target="_blank" style="color: #1e5ba8; text-decoration: none; font-weight: 600;">點這裡跟教練聊 →</a>
+        </p>
+      </div>
+
+      <!-- 8週進度說明 -->
+      <div style="margin-bottom: 40px;">
+        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 24px 0; text-align: center;">8 週的陪跑進度</h3>
+        
+        <div class="program-phase">
+          <h4>第 1-2 週：基礎建立期</h4>
+          <ul>
+            <li>✓ 建立你的基礎代謝數據</li>
+            <li>✓ 設定真實可達成的目標</li>
+            <li>✓ 調整飲食習慣，不是極端限制</li>
+          </ul>
+          <div class="program-outcome">預期成果：感受到身體變輕、活力提升</div>
+        </div>
+
+        <div class="program-phase">
+          <h4>第 3-4 週：加速期</h4>
+          <ul>
+            <li>✓ 訓練強度逐步升高</li>
+            <li>✓ 飲食配合優化</li>
+            <li>✓ 開始看到體態視覺變化</li>
+          </ul>
+          <div class="program-outcome">預期成果：體重掉 1.5-2kg，體脂明顯下降</div>
+        </div>
+
+        <div class="program-phase">
+          <h4>第 5-6 週：穩定期</h4>
+          <ul>
+            <li>✓ 突破瓶頸期</li>
+            <li>✓ 調整課表防止適應</li>
+            <li>✓ 強化核心肌群</li>
+          </ul>
+          <div class="program-outcome">預期成果：身體線條變得更緊實，肌肉感提升</div>
+        </div>
+
+        <div class="program-phase">
+          <h4>第 7-8 週：成果期</h4>
+          <ul>
+            <li>✓ 最後衝刺</li>
+            <li>✓ 蛋白質高峰期</li>
+            <li>✓ 建立長期習慣</li>
+          </ul>
+          <div class="program-outcome">預期成果：累積掉 4-6kg，體脂掉 3-5%，體態明顯改變</div>
+        </div>
+      </div>
+
+      <div style="text-align: center; padding: 30px; background: white; border-radius: 8px; border: 1px solid #ddd;">
+        <h3 style="margin: 0 0 16px 0; font-size: 18px;">為什麼選擇線上陪跑？</h3>
+        <p style="font-size: 14px; color: #666; margin: 0 0 8px 0; line-height: 1.6;">
+          一般私人教練課程：<strong>NT$1,200～1,400 / 堂</strong>（8 堂就要 NT$9,600～11,200）<br/>
+          但我們不只是課程，而是<strong>全程陪伴 + 飲食指導 + 數據追蹤 + 心理支持</strong>
+        </p>
+        <p style="font-size: 14px; color: #999; margin: 0 0 24px 0;">加上產品輔助（方案 B、C），效果更全面。</p>
+        <a href="https://line.me/ti/p/@xne2322x" target="_blank" class="btn btn-primary btn-large">申請免費評估</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 陪伴方式 -->
+  <section class="support">
+    <div class="container">
+      <h2 class="section-title">我們陪你跑的方式（不是放生）</h2>
+      <div class="support-grid">
+        <div class="support-card">
+          <h3>小團隊制</h3>
+          <p>每期只收 4-6 人，確保每個人都能獲得充分的關注。不是流水線式教學。</p>
+        </div>
+        <div class="support-card">
+          <h3>每日回報 + 即時調整</h3>
+          <p>你在 LINE 簡單回報飲食、活動量、作息，教練每日判斷狀態，主動提醒與調整方向。</p>
+        </div>
+        <div class="support-card">
+          <h3>每週數據追蹤</h3>
+          <p>體重、體脂、圍度測量，Google 表單自動記錄，看得到進度，才能繼續堅持。</p>
+        </div>
+        <div class="support-card">
+          <h3>彈性調整，不強制</h3>
+          <p>不規定課表、不強制運動。根據你的時間和體感，給個性化的建議和影片指導。</p>
+        </div>
+        <div class="support-card">
+          <h3>全天候支持</h3>
+          <p>飲食問題、執行困難、心理建設，所有疑問都有人聽。不是固定回覆時間，而是隨時在。</p>
+        </div>
+        <div class="support-card">
+          <h3>8 週後的陪伴</h3>
+          <p>不是結束，是開始。我會幫你規劃後續維持方向，甚至進一步轉變。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 常見問題 -->
+  <section id="faq" class="faq">
+    <div class="container">
+      <h2 class="section-title">關於 ACE 8 週線上陪跑計劃</h2>
+      <p class="section-desc">你可能想問的問題，我先回答你</p>
+      
+      <div class="faq-item">
+        <div class="faq-question">
+          8 週真的看得到效果嗎？
+          <span class="faq-toggle">+</span>
+        </div>
+        <div class="faq-answer">看得到。不是靠課表，靠的是每天的回報系統。教練每日判斷你的飲食、活動量、作息，主動幫你調整方向。8 週不是魔法，是持續修正累積出來的結果。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          為什麼是 8 週？不是 4 週或 12 週？
+          <span class="faq-toggle">+</span>
+        </div>
+        <div class="faq-answer">4 週太短，很多人才剛進入狀況就結束，可惜。12 週對新手又太長，光看到「三個月」很多人就先怕了。8 週剛好——夠長能看到穩定變化，也不會讓人還沒開始就覺得是負擔。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          跟去健身房找教練有什麼差？
+          <span class="faq-toggle">+</span>
+        </div>
+        <div class="faq-answer">健身房 PT 是你「到場才有教練」，離開就斷線。這個計劃是 LINE 每天陪跑，不限地點、不限時間，通勤出差在家都能跑。價格通常是 PT 套餐的一半不到。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          我工作很忙，真的跟得上嗎？
+          <span class="faq-toggle">+</span>
+        </div>
+        <div class="faq-answer">跟得上。不強制運動、不規定課表。每天只需要回報飲食和作息，教練根據你的狀態給建議。它是配合你的生活，不是要你配合它。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          我完全沒在重訓過，可以嗎？
+          <span class="faq-toggle">+</span>
+        </div>
+        <div class="faq-answer">可以。從方案 A 入門，依你的程度給訓練建議或影片。不會一開始就逼你做你不會的動作。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          線上看不到我動作，安全嗎？
+          <span class="faq-toggle">+</span>
+        </div>
+        <div class="faq-answer">教練本身有帶線下實體課程，動作指導是本業。線上提供影片示範和執行重點說明，有疑問直接 LINE 問。高雄的學員也可以安排線上線下結合，面對面補強動作細節。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          我在外縣市，還能參加嗎？
+          <span class="faq-toggle">+</span>
+        </div>
+        <div class="faq-answer">可以。線上陪跑全台都跑得了。想要線下結合的學員，目前僅限高雄。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          飲食需要特別控制嗎？
+          <span class="faq-toggle">+</span>
+        </div>
+        <div class="faq-answer">不用自己算熱量。每天回報吃什麼，教練幫你判斷、幫你調整。不是要你餓，是讓你吃對、吃夠，身體才會動。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          產品一定要買嗎？沒有產品也有效嗎？
+          <span class="faq-toggle">+</span>
+        </div>
+        <div class="faq-answer">有效。方案 A 是純陪跑，靠飲食和作息調整就能出結果。方案 B、C 的產品是輔助工具，讓前期調整更快、過程更順。不是沒有就沒效，是有了會更省力。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          8 週結束之後呢？
+          <span class="faq-toggle">+</span>
+        </div>
+        <div class="faq-answer">8 週結束你會有一套屬於自己的飲食和訓練邏輯。不是跑完就斷掉，後續可以選擇繼續陪跑，或是帶著這套方法自己走。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          可以分期嗎？
+          <span class="faq-toggle">+</span>
+        </div>
+        <div class="faq-answer">方案 C 可以分期。刷卡 6 期：每月約 NT$4,967；無卡 24 期：每月約 NT$1,242。方案 A、B 目前一次付清。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          這能保證我瘦幾公斤嗎？
+          <span class="faq-toggle">+</span>
+        </div>
+        <div class="faq-answer">沒有人能保證你的身體。但教練能保證每天都在。認真回報、認真配合，8 週內體態改變都是看得見的。你放多少進去，就拿多少出來。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          不確定哪個方案適合我怎麼辦？
+          <span class="faq-toggle">+</span>
+        </div>
+        <div class="faq-answer">直接傳訊息給我，聊聊你的狀況。不強迫、不推銷，先搞清楚你需要什麼再說。大多數人聊完都知道自己要什麼了。</div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question">
+          如果 8 週結束都沒有任何改變怎麼辦？
+          <span class="faq-toggle">+</span>
+        </div>
+        <div class="faq-answer">我們有退費保障。條件只有一個：每週認真回報達 5 天。做到這個，8 週後體態沒有任何改變，我們會扣除產品的費用退還給你。說真的，認真執行還沒效果這種事我還沒遇過。這個保障存在，是讓你安心開始，不是讓你在找後路。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 人設信任 -->
+  <section class="trust">
+    <div class="container">
+      <h2 class="section-title">你應該相信什麼樣的人？</h2>
+      <p class="section-desc">經驗、數據、價值觀，三者缺一不可</p>
+      <div class="trust-card">
+        <div class="trust-item">
+          <div class="trust-number">10+</div>
+          <div class="trust-content">
+            <h3>年教練經驗</h3>
+            <p>不是新手教練，有過真實的長期教學記錄，見過各種身體類型和問題。</p>
+          </div>
+        </div>
+        <div class="trust-item">
+          <div class="trust-number">300+</div>
+          <div class="trust-content">
+            <h3>學員轉變</h3>
+            <p>不只是我說我厲害，而是 300+ 個真實的人，用身體驗證我的方法有效。</p>
+          </div>
+        </div>
+        <div class="trust-item">
+          <div class="trust-number">-6kg</div>
+          <div class="trust-content">
+            <h3>個人進度</h3>
+            <p>我自己在執行 16/8 斷食、科學訓練和飲食控制，身體力行我所教的一切。</p>
+          </div>
+        </div>
+        <div class="trust-item trust-divider">
+          <div style="flex: 1;">
+            <h3>我的價值觀</h3>
+            <p class="quote">「我可以浪費我的時間，但不能浪費我的人生。」</p>
+            <p>這不只是我的座右銘，更是我對每個學員的承諾。我尊重你的時間投入，所以我會全力以赴，確保你看見真實的改變。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 適合度篩選 -->
+  <section class="screening">
+    <div class="container">
+      <h2 class="section-title">先說清楚，這是給誰的</h2>
+      <p class="section-desc">我們不是所有人的答案，但如果你符合以下條件，我們超合適</p>
+      <div class="screening-grid">
+        <div class="screening-card good">
+          <h3>✓ 適合你，如果你是...</h3>
+          <ul>
+            <li>準備好投入 8 週，認真配合</li>
+            <li>願意改變飲食習慣，不是短期節食</li>
+            <li>想要可持續的轉變，而不是快速爆瘦</li>
+            <li>相信科學方法，願意追蹤數據</li>
+            <li>準備好面對困難，不怕吃苦</li>
+          </ul>
+        </div>
+        <div class="screening-card bad">
+          <h3>✗ 可能不適合，如果你是...</h3>
+          <ul>
+            <li>想 1 個月爆瘦 10kg（不健康，我不會幫）</li>
+            <li>付費後還想自己亂吃、不追蹤</li>
+            <li>期待快速見效，沒有耐心</li>
+            <li>只想買課表，不想要陪伴</li>
+            <li>打算找完美教練，其實自己缺乏決心</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta">
+    <div class="container">
+      <h2>如果不想再失敗一次...</h2>
+      <p>下一個成功案例，可能就是你。我每期只收 4-6 人，名額有限。</p>
+      <div class="cta-buttons">
+        <a href="https://line.me/ti/p/@xne2322x" target="_blank" class="btn btn-large btn-white">申請免費評估 →</a>
+        <button class="btn btn-large btn-outline">詳細了解</button>
+      </div>
+      <p class="cta-footer">立即加入 LINE@，我會在 24 小時內回覆你</p>
+    </div>
+  </section>
+
+  <!-- 頁尾 -->
+  <footer>
+    <div class="container">
+      <div>
+        <h4>ACE 教練</h4>
+        <p>代謝重建 × 科學訓練</p>
+      </div>
+      <div>
+        <h4>方案</h4>
+        <div>8 週線上陪跑<br/>營養諮詢<br/>免費評估</div>
+      </div>
+      <div>
+        <h4>聯絡</h4>
+        <div>Instagram: @acefit1108<br/>LINE@: @xne2322x<br/><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="f9959c9e9c979dd7959097c8c8c9c1b99e94989095d79a9694">[email&#160;protected]</a></div>
+      </div>
+      <div>
+        <h4>資源</h4>
+        <div>健身計算機<br/>預約課程</div>
+      </div>
+    </div>
+    <div class="footer-divider">
+      © 2026 ACE 教練. All rights reserved.
+    </div>
+  </footer>
+
+  <script>
+    // FAQ 展開/折疊
+    document.querySelectorAll('.faq-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const answer = item.querySelector('.faq-answer');
+        const toggle = item.querySelector('.faq-toggle');
+        answer.classList.toggle('active');
+        toggle.textContent = answer.classList.contains('active') ? '−' : '+';
+      });
+    });
+  </script>
+</body>
+</html>
