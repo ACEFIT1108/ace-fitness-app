@@ -440,6 +440,17 @@ figcaption {
   color: var(--yellow);
 }
 
+.consult-note {
+  max-width: 640px;
+  margin: -8px 0 28px;
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 210, 96, 0.36);
+  border-radius: 18px;
+  color: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 210, 96, 0.1);
+  font-weight: 800;
+}
+
 .consult-section img {
   width: min(100%, 430px);
   justify-self: end;
