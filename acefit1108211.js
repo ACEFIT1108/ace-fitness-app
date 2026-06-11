@@ -1,5 +1,11 @@
 const header = document.querySelector(".site-header");
+const mobileCta = document.querySelector(".mobile-cta");
 
-window.addEventListener("scroll", () => {
-  header.classList.toggle("is-scrolled", window.scrollY > 8);
-});
+function updateScrollState() {
+  const isScrolled = window.scrollY > 8;
+  header.classList.toggle("is-scrolled", isScrolled);
+  mobileCta?.classList.toggle("is-visible", window.scrollY > 520);
+}
+
+window.addEventListener("scroll", updateScrollState, { passive: true });
+updateScrollState();

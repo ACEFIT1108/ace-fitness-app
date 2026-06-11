@@ -519,8 +519,7 @@ figcaption {
   }
 
   .profile-chip {
-    top: -18px;
-    left: 12px;
+    display: none;
   }
 
   .process-list,
@@ -582,7 +581,7 @@ figcaption {
     width: 100%;
   }
 
-  .mobile-cta {
+  .mobile-cta.is-visible {
     display: block;
   }
 }
